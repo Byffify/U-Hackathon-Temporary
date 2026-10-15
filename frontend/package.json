@@ -10,22 +10,30 @@
     "tokens": "node scripts/design-tokens.mjs",
     "check:design": "node scripts/design-tokens.mjs --check",
     "check": "node scripts/check.mjs",
-    "format": "prettier --write src scripts tests index.html vite.config.js package.json premium-ui.json",
-    "format:check": "prettier --check src scripts tests index.html vite.config.js package.json premium-ui.json",
-    "test": "node --test tests/*.test.mjs",
+    "format": "prettier --write src scripts tests e2e index.html *.config.js package.json premium-ui.json",
+    "format:check": "prettier --check src scripts tests e2e index.html *.config.js package.json premium-ui.json",
+    "test": "node --test tests/*.test.mjs src/pages/commerce/helpers.test.mjs",
     "build": "vite build",
-    "preview": "vite preview --host 127.0.0.1 --port 4173"
+    "preview": "vite preview --host 127.0.0.1 --port 4173",
+    "test:ui": "vitest run",
+    "test:browser": "playwright test"
   },
   "engines": {
     "node": ">=22.12.0"
   },
   "dependencies": {
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@vitejs/plugin-react": "^6.1.2",
+    "jsdom": "^30.1.3",
     "prettier": "^3.9.10",
-    "vite": "^8.3.4"
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
   }
 }

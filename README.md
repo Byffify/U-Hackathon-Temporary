@@ -1,69 +1,41 @@
 # U-topia
 
-React + JavaScript frontend, built with Vite. The creator landing page adapts `FASTWORK_SELLING_UX_UI_SPEC_TH.md` to the agreed U-topia business rules.
+Connected marketplace frontend built with React, JavaScript, Vite and React Router. English interface with the existing editorial landing and a responsive product workspace.
 
 ## Run
 
-Requires Node.js 22.12 or later (the lockfile records exact dependencies).
+Node.js 22.12+ required. From `frontend/`:
 
 ```sh
-cd frontend
 npm install
 npm run dev
-```
-
-Local preview: http://127.0.0.1:4173
-
-```sh
 npm run check
 npm test
+npm run test:ui
+npm run test:browser
 npm run build
-npm run preview
 ```
 
-## Structure
+Default local URL: http://127.0.0.1:4173. Browser tests start their own server on 4187 and require `npx playwright install chromium` once. Production hosting must rewrite application routes to index.html; proxy `/api/v1` to the backend before that fallback.
 
-```text
-frontend/
-  package.json            Frontend dependencies and commands
-  index.html              Vite HTML entrypoint
-  src/
-    main.jsx              React entrypoint
-    App.jsx               Landing and dialog coordination
-    pages/                Page-level composition
-    components/
-      landing/            Hero artwork, creator showcase, U-Bot, FAQ
-      dialogs/            Creator, project, fee, and plan dialog content
-      layout/             Shared site header and footer
-      ui/                 Shared accessible modal
-    data/                 Clearly labeled illustrative content
-    hooks/                Reusable React hooks for responsive behavior
-    lib/                  Browser wallet integration boundary
-    utils/                Exact fee calculations and local interaction events
-    styles/               Global CSS and generated design tokens
-  public/                 Static public assets
-  scripts/                Token generation, drift checks, and syntax checks
-  tests/                  Behavior tests
-  DESIGN.md               Frontend design tokens and component guidance
-docs/                     Product decisions, ADRs, and verification evidence
-.scratch/u-topia-mvp/      Product spec and draft tickets
-```
+## Modes
 
-The frontend is plain JavaScript and JSX, not TypeScript. Components own their React state; the presentation has no manual DOM rendering or copied Fastwork assets.
+Copy frontend/.env.example to frontend/.env.local. `VITE_SERVICE_MODE=demo` is the default: sample listings and simulated metadata persist locally, with clearly labeled demo account login. No real payment, encryption, source delivery or Gemini call occurs. Uploaded file bytes are not persisted. External license verification and downloadable source/generated ZIPs are unavailable in demo; no fake archive is supplied.
 
-## Scope of this implementation
+Use `VITE_SERVICE_MODE=api` and `VITE_API_BASE_URL=/api/v1` to connect the backend. Requests use authenticated cookies. API failure never falls back to fixtures. Backend must implement the proposed contract in docs/frontend-api.md, including auth, permissions, verified payment, source delivery and Gemini processing. Do not put server keys in Vite environment variables.
 
-Working UI: creator/profile tabs and keyboard navigation, example project search and details, a 90/10 test AVAX fee calculator, source-feature selection, custom stack selection, plan preview, native modal focus handling, and optional injected-wallet address connection.
+## Pages
 
-Not connected: backend authentication, source encryption/IPFS uploads, payment contracts and gas sponsorship, source downloads, and AI generation. Example projects are illustrative, not purchasable listings. Wallet connection requests an address only; it does not authenticate a server session, request signatures, or make a payment.
+Landing; Explore/search/filter; project details and public creators; wallet authentication; profile settings; creator project drafts, screenshots, ZIP publishing and releases; purchase confirmation/recovery; Library, downloads and updates; license resale; Gemini conversations, source context, quota review, explicit generation confirmation and output history; 404 and recovery states.
 
-## Design tokens
+Gemini replaces U-Bot, supports one or many authorized source releases, and creates ZIPs only through the connected backend after explicit confirmation. See docs/adr/0011-gemini-conversations-and-single-project-work.md.
 
-`frontend/DESIGN.md` is the token source. Run these commands from `frontend/` after changing token frontmatter:
+## Working agreements
 
-```sh
-npm run tokens
-npm run check:design
-```
+- Product specification and task progress: .scratch/u-topia-frontend/.
+- Backend handoff contract: docs/frontend-api.md (proposal awaiting teammate agreement).
+- Visual source and token commands: frontend/DESIGN.md; `npm run tokens` and `npm run check:design`.
+- Shared behavior ownership: frontend/UX-CONTRACT.md.
+- Verification evidence and live integration limits: docs/verification/frontend-marketplace.md.
 
-Do not hand-edit generated tokens. Google Fonts are optional remote resources; local fallbacks keep the page readable without them.
+Live Avalanche Fuji, gas sponsorship, IPFS source encryption and Gemini ZIP generation require separate real-service acceptance. Tests of development fixtures do not establish those integrations.

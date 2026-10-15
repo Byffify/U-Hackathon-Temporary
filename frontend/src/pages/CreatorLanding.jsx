@@ -9,16 +9,25 @@ import FaqSection from "../components/landing/FaqSection.jsx";
 import FinalCta from "../components/landing/FinalCta.jsx";
 import SiteHeader from "../components/layout/SiteHeader.jsx";
 import SiteFooter from "../components/layout/SiteFooter.jsx";
+import { useEffect, useRef } from "react";
+import { createLandingMotion } from "../lib/landingMotion.js";
+function SlideSection({ children }) {
+  return <div data-landing-slide>{children}</div>;
+}
 
 export default function CreatorLanding({ actions }) {
+  const mainRef = useRef(null);
+  useEffect(() => createLandingMotion(mainRef.current), []);
   return (
     <>
       <a className="skip-link" href="#main">
         Skip to content
       </a>
       <SiteHeader actions={actions} />
-      <main id="main">
-        <Hero actions={actions} />
+      <main id="main" ref={mainRef}>
+        <SlideSection>
+          <Hero actions={actions} />
+        </SlideSection>
 
         <div className="manifesto-strip">
           <span>YOUR WORK, YOUR NAME.</span>
@@ -32,21 +41,37 @@ export default function CreatorLanding({ actions }) {
           <span>SOMETHING NEW STARTS HERE.</span>
         </div>
 
-        <CreatorSection actions={actions} />
+        <SlideSection>
+          <CreatorSection actions={actions} />
+        </SlideSection>
 
-        <PainPoints actions={actions} />
+        <SlideSection>
+          <PainPoints actions={actions} />
+        </SlideSection>
 
-        <FeeSection actions={actions} />
+        <SlideSection>
+          <FeeSection actions={actions} />
+        </SlideSection>
 
-        <HowItWorks actions={actions} />
+        <SlideSection>
+          <HowItWorks actions={actions} />
+        </SlideSection>
 
-        <FeatureShowcase actions={actions} />
+        <SlideSection>
+          <FeatureShowcase actions={actions} />
+        </SlideSection>
 
-        <UbotSection actions={actions} />
+        <SlideSection>
+          <UbotSection actions={actions} />
+        </SlideSection>
 
-        <FaqSection actions={actions} />
+        <SlideSection>
+          <FaqSection actions={actions} />
+        </SlideSection>
 
-        <FinalCta actions={actions} />
+        <SlideSection>
+          <FinalCta actions={actions} />
+        </SlideSection>
       </main>
       <SiteFooter actions={actions} />
     </>

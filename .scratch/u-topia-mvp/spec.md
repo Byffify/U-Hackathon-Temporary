@@ -1,3 +1,5 @@
+> Current decision: ADR-0011 and .scratch/u-topia-frontend/spec.md supersede older multi-project-only/provider-deferred descriptions. Gemini is selected; one-project editing is in scope. Existing proposed full-stack tickets remain historical drafts.
+
 # U-topia — Hackathon MVP
 
 Status: ready-for-agent
@@ -18,7 +20,7 @@ Delivery target: 16 October 2026, 12:00 Asia/Bangkok
 
 ผู้ซื้อจ่ายราคาที่แสดง ได้ token สิทธิ์ของตนเอง และรับ ZIP หลัง backend ยืนยัน wallet และสิทธิ์บนเชน หนึ่งรายการขายให้หลายคนได้ ซื้อแล้วรับอัปเดตในรายการเดิมฟรี ผู้ขายรับ 90% และ U-topia หัก 10% พร้อมออก gas ของการซื้อจากส่วนนี้
 
-U-Bot เป็นบริการเสริมเฉพาะงานรวมหลายโปรเจกต์ ผู้ใช้เลือกฟีเจอร์ พิมพ์ความต้องการเพิ่ม เลือก stack เป้าหมาย และตรวจแผนพร้อมโควตาก่อนยืนยัน จากนั้นรับโค้ด ZIP ไปใช้เองหรือกลับมาลงขายตามเงื่อนไขต้นทาง แพลตฟอร์มไม่ deploy ผลงานให้
+Gemini เป็นบริการเสริมเฉพาะงานรวมหลายโปรเจกต์ ผู้ใช้เลือกฟีเจอร์ พิมพ์ความต้องการเพิ่ม เลือก stack เป้าหมาย และตรวจแผนพร้อมโควตาก่อนยืนยัน จากนั้นรับโค้ด ZIP ไปใช้เองหรือกลับมาลงขายตามเงื่อนไขต้นทาง แพลตฟอร์มไม่ deploy ผลงานให้
 
 ## User Stories
 
@@ -67,20 +69,20 @@ U-Bot เป็นบริการเสริมเฉพาะงานร�
 32. As a creator of a permitted derivative, I want to publish a new listing with its source ZIP, so that I can sell the new product.
 33. As a derivative seller, I want no upstream royalty deduction, so that only the platform fee is deducted from my sale.
 
-### U-Bot feature composition
+### Gemini feature composition
 
-34. As a U-Bot user, I want to select multiple source projects without a fixed product-count ceiling, so that I can compose features from several sources.
-35. As a U-Bot user, I want to include compatible open-source material, so that composition can use both entitled purchases and appropriately licensed public code.
-36. As a U-Bot user, I want source features suggested after analysis, so that I can select the parts I need instead of merging every file blindly.
-37. As a U-Bot user, I want to type additional requirements, so that the suggested choices do not limit my intended result.
-38. As a U-Bot user, I want to choose a target stack, so that the output fits my intended use.
-39. As a U-Bot user, I want to see a composition plan, dependencies, conflicts, and expected quota use, so that I can decide before code generation begins.
-40. As a U-Bot user, I want to add, remove, or change features and recalculate the plan, so that I can fit the work to my quota.
-41. As a U-Bot user, I want generation to start only after my explicit confirmation, so that analysis is not mistaken for permission to generate.
-42. As a U-Bot user, I want a fixed trial allowance per account, so that I can use the service without buying credits during the trial.
-43. As a U-Bot user, I want a quota shortage explained before generation, so that I can change the plan rather than encounter an automatic extra charge.
-44. As a U-Bot user, I want one downloadable output ZIP with provenance and run instructions, so that I can take the composed project elsewhere.
-45. As a U-Bot user, I want validation results and remaining limitations reported accurately, so that generated code is not presented as verified when it has not been checked.
+34. As a Gemini user, I want to select multiple source projects without a fixed product-count ceiling, so that I can compose features from several sources.
+35. As a Gemini user, I want to include compatible open-source material, so that composition can use both entitled purchases and appropriately licensed public code.
+36. As a Gemini user, I want source features suggested after analysis, so that I can select the parts I need instead of merging every file blindly.
+37. As a Gemini user, I want to type additional requirements, so that the suggested choices do not limit my intended result.
+38. As a Gemini user, I want to choose a target stack, so that the output fits my intended use.
+39. As a Gemini user, I want to see a composition plan, dependencies, conflicts, and expected quota use, so that I can decide before code generation begins.
+40. As a Gemini user, I want to add, remove, or change features and recalculate the plan, so that I can fit the work to my quota.
+41. As a Gemini user, I want generation to start only after my explicit confirmation, so that analysis is not mistaken for permission to generate.
+42. As a Gemini user, I want a fixed trial allowance per account, so that I can use the service without buying credits during the trial.
+43. As a Gemini user, I want a quota shortage explained before generation, so that I can change the plan rather than encounter an automatic extra charge.
+44. As a Gemini user, I want one downloadable output ZIP with provenance and run instructions, so that I can take the composed project elsewhere.
+45. As a Gemini user, I want validation results and remaining limitations reported accurately, so that generated code is not presented as verified when it has not been checked.
 46. As a platform owner, I want concurrent jobs to share the account's quota safely, so that starting two jobs cannot overspend the same balance.
 47. As a platform owner, I want unconfigured integrations and service failures represented honestly, so that a mock response is not mistaken for a working model, payment, or IPFS upload.
 
@@ -89,7 +91,7 @@ U-Bot เป็นบริการเสริมเฉพาะงานร�
 ### Confirmed boundaries
 
 - UI and system messages are English; creator-supplied content can be in any language.
-- This is a full application with public discovery, creator profiles, publishing, purchases, downloads, updates, permitted resale, U-Bot composition, and derivative publication. Scope is not silently reduced to static screens or a purchase-only demo.
+- This is a full application with public discovery, creator profiles, publishing, purchases, downloads, updates, permitted resale, Gemini composition, and derivative publication. Scope is not silently reduced to static screens or a purchase-only demo.
 - Wallet identity is shared across buying and selling. The backend proves control of the wallet before granting an authenticated session.
 - Project source is supplied as ZIP, not as a protected repository link. The public demo stays on the creator's existing hosting.
 - IPFS stores encrypted source. Decryption keys remain off-chain under backend custody and must be recoverable through secured operational backups.
@@ -97,7 +99,7 @@ U-Bot เป็นบริการเสริมเฉพาะงานร�
 - The platform fee is 10% of the sale price. The seller receives 90%; the platform pays purchase gas and bears gas-price risk. The same fee applies to primary purchases and platform-mediated resale. No upstream royalty is deducted from derivative sales.
 - Each buyer receives their own entitlement. A listing can have many buyers, and resale transfers only the seller's entitlement.
 - Existing-rights resale and derivative-sale permissions are independent creator choices. A derivative allowed for sale can be sold with its source without another source-redistribution toggle.
-- U-Bot is for multi-project composition only. It does not provide a standalone single-project editing service.
+- Gemini uses conversations with one or many authorized projects for explanation, editing and composition, per ADR-0011.
 - The user chooses features and may choose a target stack. No seller or buyer is forced into React, Next.js, or another single framework.
 - There is no fixed product rule limiting the number of selected projects. Runtime, model context, archive size, and quota still have finite limits; the application must explain them and allow a revised plan.
 - Trial quota is one allocation per account, with no daily reset, automatic purchase credit award, or top-up feature.
@@ -105,7 +107,7 @@ U-Bot เป็นบริการเสริมเฉพาะงานร�
 
 ### Proposed module contracts for written-spec review
 
-These rules make the agreed behavior implementable and testable. They do not select a concrete framework, database, pinning vendor, model vendor, or gas-sponsorship provider.
+These rules make the agreed behavior implementable and testable. They do not select a concrete framework, database, pinning vendor, exact Gemini model ID, or gas-sponsorship provider.
 
 1. **Identity and profiles:** issue a short-lived, one-time signing challenge bound to this application; validate ownership, expiry, and replay protection before issuing a session. Mutations act on the session identity, not an arbitrary submitted address. A wallet address is one account; wallet linking or recovery is not inferred.
 2. **Listings and releases:** maintain listing identity, creator, metadata, demo URL, stack declaration, price, license terms, and versioned encrypted releases. Technical validation and completed storage precede a buyable published state; human approval is not required. Creating a new release in the same listing does not require old buyers to purchase again.
@@ -116,15 +118,15 @@ These rules make the agreed behavior implementable and testable. They do not sel
 7. **Rights and source access:** verify chain, authoritative contract, current holder, listing, and settled purchase before source decryption. Repeated notifications or delivery retries do not mint or charge again. CID possession, a connected wallet, a transaction hash alone, or a frontend success event are not sufficient authorization. A temporary RPC failure fails closed without pretending the buyer has lost the purchase.
 8. **Transfers and updates:** settlement checks that the seller currently owns the entitlement and its recorded terms permit resale. Payment, fee allocation, and transfer complete atomically or all fail. After transfer the new holder can access releases in the listing, including updates; the previous holder loses fresh access under that transferred entitlement. Another independently held entitlement is unaffected. Downloaded copies cannot be recalled.
 9. **Archive storage:** encrypt each release before pinning it; keep key material outside public metadata and chain state. Preserve ciphertext integrity and release identity. Reject unsafe or unusable archives before publication, and extract source only into an isolated job workspace with bounded resources. Do not execute arbitrary uploaded scripts on the application server.
-10. **Composition planning:** require at least two source projects, track the exact releases and source rights used, analyze features, accept free-text additions and target-stack selection, and produce a versioned plan. Editing the source set, features, or stack invalidates the old plan and requires fresh estimation and confirmation. Analysis may inspect source but does not start the output-generation phase.
+10. **Composition planning:** require at least one authorized source project, track the exact releases and source rights used, analyze features, accept free-text additions and target-stack selection, and produce a versioned plan. Editing the source set, features, stack or conversation instructions invalidates the old plan and requires fresh estimation and confirmation. Analysis may inspect source but does not start the output-generation phase.
 11. **Open-source intake:** record origin and available license evidence for imported public material. Treat unknown or incompatible permission as a blocked source for the requested use, not as permission inferred by the model. Preserve required attribution and notices in the output. Public availability alone is not evidence of permission to resell source.
 12. **Derivative eligibility:** maintain provenance for each included source. Download for an allowed use does not automatically mean the result is sellable; publication as a derivative requires all applicable upstream permissions to allow it. Source-owned-by-user material is treated according to that user's declared rights. A model's assertion cannot override stored terms.
 13. **Trial quota:** grant the configured trial allowance once when an authenticated eligible account first enters composition, not per purchase. Record usage persistently; refresh, reconnect, or a new job does not reset it. A configured trial end bounds the allowance. Configuration must explicitly provide the initial allowance and unit conversion; no production amount is guessed from the absent model pricing.
 14. **Quota reservation:** disclose that analysis can consume quota before starting analysis. Before generation, display the plan's generation allowance, compare with the remaining account balance, and reserve it atomically on confirmation. Meter analysis and generation separately, settle actual recorded usage within the reserved budget, and release unused reservations on completion or failure. An incurred provider cost is not described as refunded merely because output generation failed. Stop or fail the job rather than exceeding its configured budget silently.
 15. **Job lifecycle:** expose analyzing, awaiting confirmation, generating, completed, and failed states with recoverable job history. Repeated confirmation of the same plan does not create duplicate work. Recheck required source access before generation. Report input incompatibility or resource limits with the opportunity to revise the plan, rather than claim support for every possible codebase.
 16. **Output and validation:** package an integrated project and its setup instructions with dependency, provenance, and license notes. Check archive integrity, changed-file consistency, and available static/build validation in isolation. Distinguish checks that passed, failed, or could not run. A failed build must not appear as a successfully validated result; the user can see the failure and revise the plan. Generated source can re-enter the ordinary listing flow when permitted.
-17. **External adapters:** separate the application-facing contracts for chain access, sponsored payment, encrypted storage, and model analysis/generation from provider-specific integration. Real credentials stay server-side. Contract tests may use controlled doubles, but end-to-end acceptance for IPFS, Fuji, gas sponsorship, and U-Bot requires real services.
-18. **Unavailable services:** if the model or allowance configuration is absent, make the composition service unavailable with a clear English message and do not consume quota. Keep configured marketplace features usable. This is a setup state, not permission to mark the complete U-Bot feature delivered without a real model.
+17. **External adapters:** separate the application-facing contracts for chain access, sponsored payment, encrypted storage, and model analysis/generation from provider-specific integration. Real credentials stay server-side. Contract tests may use controlled doubles, but end-to-end acceptance for IPFS, Fuji, gas sponsorship, and Gemini requires real services.
+18. **Unavailable services:** if the model or allowance configuration is absent, make the composition service unavailable with a clear English message and do not consume quota. Keep configured marketplace features usable. This is a setup state, not permission to mark the complete Gemini feature delivered without a real model.
 19. **UI states:** make pending transaction, wallet rejection, wrong chain, upload failure, unavailable demo, failed delivery, analysis failure, quota shortage, and job progress visible and retryable where appropriate. Do not display a paid or completed state before its underlying operation succeeds.
 
 ### Data relationships
@@ -146,7 +148,7 @@ Test externally visible application behavior through browser and application-ser
 1. Authenticate wallet A; a replayed, expired, or wrong-wallet signature cannot authenticate as A. Wallet B cannot mutate A's profile or listing.
 2. Publish a valid encrypted source release and discover it through Explore and the creator profile. An incomplete or failed storage operation does not produce a buyable listing.
 3. Fetch the stored IPFS payload and confirm it is ciphertext rather than a readable ZIP; tampering prevents successful decryption. Public responses and chain metadata do not contain usable source keys.
-4. A buyer with no entitlement cannot download or use the source in U-Bot, even with its CID or another buyer's transaction hash.
+4. A buyer with no entitlement cannot download or use the source in Gemini, even with its CID or another buyer's transaction hash.
 5. A successful primary purchase produces the correct entitlement and 90/10 split. Test exact integer rounding, wrong price, wrong network, replayed purchase authorization, reverted settlement, and duplicate notification.
 6. Buyers B and C can independently buy the same listing and receive access. One purchase does not change the other buyer's rights.
 7. Verify sponsored purchase accounting from balances or equivalent authoritative receipts: buyer pays only the product price, seller receives the price less the 10% fee, and sponsor pays the actual network charge. Test sponsor unavailability and lack of authorized buyer funds without falsely reporting success.
@@ -173,7 +175,7 @@ Test externally visible application behavior through browser and application-ser
 
 - Mainnet deployment and real-money payment in this release.
 - Hosted execution or automatic deployment of purchased/generated projects for buyers.
-- Standalone U-Bot editing of a single project.
+- Autonomous AI agent work outside explicit user confirmation.
 - Credit top-ups, credit sales, daily quota resets, and purchase-linked credit awards.
 - Automatic refunds and upstream derivative-sale royalties.
 - Hidden repository-link delivery, a service called IPFS.lock, and claims that IPFS encrypts the source automatically.
@@ -187,7 +189,7 @@ These exclusions reflect the user's decisions or technical limits, not removal o
 
 ### Deployment prerequisites held open explicitly
 
-- **Model provider:** the user requested deferring this choice. A name heard as Tokenomit has not been tied to confirmed documentation. If it means Tokenomist, the documentation checked describes a tokenomics-data API, not the code-generation model. Do not treat those as interchangeable or expose a secret key in the product UI.
+- **Model provider:** Gemini is selected by the user. Exact model ID, server-side API configuration and metering remain backend setup. The product uses chat for one or many authorized projects; no Gemini secret belongs in frontend code.
 - **Quota configuration:** choose the initial allowance, unit conversion, analysis/generation budget rules, and trial end against the actual selected model's usage and platform budget. The behavior above is specified, but the numeric deployment settings remain a launch prerequisite rather than an invented product decision.
 - **Sponsored-payment infrastructure:** choose and validate a Fuji-compatible implementation that can authorize the buyer's native payment while the platform funds gas. Provider credentials and test funding are operational prerequisites. A design that makes the buyer pay gas separately contradicts the agreed fee model.
 - **Hosting and IPFS:** provision application hosting, persistent account/job/key storage, encryption-key protection, and IPFS pinning. Choice of vendor remains an implementation planning decision; storage persistence and successful restoration must be verified.

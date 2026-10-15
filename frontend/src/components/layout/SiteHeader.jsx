@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 export default function SiteHeader({ actions }) {
   return (
     <header className="site-header">
@@ -15,7 +16,7 @@ export default function SiteHeader({ actions }) {
           </span>
         </a>
         <nav className="main-nav" aria-label="Main navigation">
-          <a href="#creators">Explore</a>
+          <Link to="/explore">Explore</Link>
           <a className="nav-active" href="#main" aria-current="page">
             For creators
           </a>

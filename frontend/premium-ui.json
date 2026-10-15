@@ -1,5 +1,5 @@
 {
-  "profile": "marketing",
+  "profile": "product-admin",
   "sourceRoots": ["src"],
   "locale": "en",
   "ownership": {
@@ -11,6 +11,8 @@
     "check": "npm run check",
     "unit": "npm test",
     "build": "npm run build",
-    "format": "npm run format:check"
+    "format": "npm run format:check",
+    "e2e": "npm run test:browser",
+    "ui": "npm run test:ui"
   }
 }
