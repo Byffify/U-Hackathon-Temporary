@@ -8,14 +8,14 @@ Python 3.12 or newer. Run from `backend/`:
 
 ```powershell
 python -m venv .venv
-.venv/Scripts/python.exe -m pip install -r requirements.lock
+.venv/Scripts/python.exe -m pip install -r requirements.txt
 .venv/Scripts/python.exe -m pip install -e ".[dev]"
 Copy-Item .env.example .env
 .venv/Scripts/python.exe -m alembic upgrade head
 .venv/Scripts/python.exe -m uvicorn app.main:create_app --factory --reload --host 127.0.0.1 --port 8000
 ```
 
-Linux/macOS use `.venv/bin/python` instead. The checked-in `requirements.lock` pins runtime dependencies; `pyproject.toml` contains the development extras.
+Linux/macOS use `.venv/bin/python` instead. `requirements.txt` contains the pinned runtime dependencies for Railpack and mirrors `requirements.lock`; keep both files in sync when updating dependencies. `pyproject.toml` contains the development extras.
 
 - Swagger UI: http://127.0.0.1:8000/docs
 - Live API contract: http://127.0.0.1:8000/openapi.json
@@ -77,19 +77,19 @@ Auth supports EOA wallets using 65-byte personal-sign signatures only. ERC-1271 
 
 Tests use disposable signing keys and independent SQLite files, real HTTP application boundaries, signature recovery and migrations. They do not invoke Gemini, IPFS, Fuji or a hosted database. If the desktop sandbox denies pytest's temp-directory access, run tests with the authorized terminal permissions; this is not an application failure.
 
-For a local PostgreSQL deployment, run `docker compose up --build` from the project root. The migration service runs once before the API starts. Compose credentials are local-development values, not cloud credentials. Docker Engine must be running. Do not use `docker compose down -v` unless you intend to remove the local database volume.
+For local PostgreSQL, configure `DATABASE_URL` in `.env`, run the migration command above, then start the API.
 
 ## Railway configuration
 
 Deploying is a separate operation; no Railway service has been created from this package.
 
-1. Configure the API service Root Directory as `/backend` and Config File as `/backend/railway.toml` ([Railway monorepo docs](https://docs.railway.com/deployments/monorepo)). Set up a persistent PostgreSQL database and backup.
+1. Configure the API service Root Directory as `/backend` and Builder as Railpack. For an existing service that uses config as code, set Config File to `/backend/railway.toml` ([Railway monorepo docs](https://docs.railway.com/deployments/monorepo)). Set up a persistent PostgreSQL database and backup.
 2. Set DATABASE_URL to its PostgreSQL connection URL (SSL as required by the database provider), ENVIRONMENT=production, COOKIE_SECURE=true, AUTH_DOMAIN to the frontend host, AUTH_URI to its HTTPS origin, and FRONTEND_ORIGINS to a JSON array of exact allowed HTTPS origins.
 3. Use COOKIE_SAMESITE=none when FE/API are on different sites; cross-site browser cookie policies may still block third-party cookies. For reliable browser sessions prefer custom subdomains of the same site or a frontend same-origin reverse proxy. Same-site deployment can use lax.
-4. `railway.toml` runs `python -m alembic upgrade head` as a pre-deploy command and checks `/health/ready`. Docker starts Uvicorn using Railway's PORT; migrations are not run at image build time.
+4. Railpack installs `requirements.txt` with Python 3.12 and uses `railpack.json` to start `app.main:create_app` on Railway's PORT. Remove the old custom API Start Command so this command is used. `railway.toml` runs `python -m alembic upgrade head` before deployment and checks `/health/ready`; if Railway does not apply the config file, set those two values in the service settings.
 5. Disable serverless sleep if the demo must remain warm, and monitor actual trial credit usage. Trial credit is not an uptime guarantee or unlimited free hosting.
 6. Auth rate limit defaults to 30 requests/minute per ASGI client peer across challenge and verify. Counters live in SQL, shared by workers/restarts. Configure forwarded-client handling only for a verified trusted proxy path; never blindly trust arbitrary X-Forwarded-For. Without trusted proxy configuration, users behind the same proxy may share a limit. Adjust the demo budget intentionally, not by trusting user-supplied IP headers.
 
 ## External acceptance still pending
 
-No cloud services have been provisioned or deployed by this implementation. Configure IPFS/Supabase, Fuji contract/sponsor, Gemini Free Tier and optional Modal before enabling their flows. Tests distinguish local disk, controlled provider fixtures and real local-EVM integration from external integration. Production PostgreSQL execution and the Linux Docker image remain to be verified. Avatar binary uploads now exist at POST `/api/v1/me/avatar`; source ZIP upload is POST `/api/v1/projects/{id}/releases`.
+No cloud services have been provisioned or deployed by this implementation. Configure IPFS/Supabase, Fuji contract/sponsor, Gemini Free Tier and optional Modal before enabling their flows. Tests distinguish local disk, controlled provider fixtures and real local-EVM integration from external integration. Production PostgreSQL execution and the Railpack image remain to be verified. Avatar binary uploads now exist at POST `/api/v1/me/avatar`; source ZIP upload is POST `/api/v1/projects/{id}/releases`.

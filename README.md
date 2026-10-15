@@ -2,7 +2,7 @@
 
 React + JavaScript frontend, built with Vite. The creator landing page adapts `FASTWORK_SELLING_UX_UI_SPEC_TH.md` to the agreed U-topia business rules.
 
-Python Backend foundation is now in [`backend/`](backend/README.md): FastAPI wallet-signature login, persistent sessions, public/own profiles, SQL migrations, HTTP tests, Docker and Railway configuration. Frontend integration and marketplace/Gemini/contract services are not connected yet. See the backend README for local commands and exact delivery limits.
+Python Backend foundation is now in [`backend/`](backend/README.md): FastAPI wallet-signature login, persistent sessions, public/own profiles, SQL migrations, HTTP tests, and Railway Railpack configuration. Frontend integration and marketplace/Gemini/contract services are not connected yet. See the backend README for local commands and exact delivery limits.
 
 ## Run
 

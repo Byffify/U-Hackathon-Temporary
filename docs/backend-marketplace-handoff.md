@@ -57,7 +57,7 @@ This escrow design provides sponsored purchases but **does not provide gas-free 
 
 The backend uses google-genai and never switches to an alternate model or paid project automatically. Configure GEMINI_API_KEY, an available Free Tier GEMINI_MODEL, GEMINI_FREE_TIER_ENABLED=true and explicit token budgets: GEMINI_INITIAL_QUOTA, GEMINI_ANALYSIS_BUDGET, GEMINI_GENERATION_BUDGET, GEMINI_TRIAL_END (Unix timestamp). The boolean is a deployment attestation, **not a Google billing switch**; use a Free Tier project/key. No provider/model or numeric trial budget is guessed.
 
-Run a separate Railway service from the same backend image with start command `python -m app.worker`, sharing the database and private storage configuration. API queues durable jobs; it does not run AI in long HTTP requests. Missing AI configuration returns GEMINI_UNAVAILABLE before quota allocation/usage.
+Run a separate Railway service from the same backend revision with a custom start command `python -m app.worker`, sharing the database and private storage configuration. API queues durable jobs; it does not run AI in long HTTP requests. Missing AI configuration returns GEMINI_UNAVAILABLE before quota allocation/usage.
 
 User selects one or multiple exact releases. Estimate precedes analysis; messages never confirm generation. New messages/source/stack changes invalidate unconfirmed plans. Explicit latest-revision confirmation atomically reserves quota and queues one generation per plan. Quota is one allocation per account, no daily reset/top-up/purchase reward. Known failed usage is charged; unused reservations are released. Unknown provider outcomes keep their reservation for manual reconciliation and are not retried blindly.
 
@@ -69,6 +69,6 @@ Open-source intake retains origin, archive hash and license evidence. Recognitio
 
 ## Deployment/readiness
 
-Railway still uses `/backend`, `/backend/railway.toml`, PostgreSQL, Secure session cookies and correct frontend CORS/CSRF settings. Health readiness now checks all registered tables, so migrations 0001–0005 must complete before traffic. Keep API and worker images on the same revision. Do not store keys, source files or job outputs in an ephemeral Railway filesystem.
+Railway uses Railpack with `/backend` as the root, `requirements.txt` for pinned dependencies, `railpack.json` for the API start command, and `/backend/railway.toml` for API migration and readiness settings where config as code is available. Use PostgreSQL, Secure session cookies and correct frontend CORS/CSRF settings. Health readiness checks all registered tables, so migrations 0001–0005 must complete before traffic. Keep API and worker deployments on the same revision. Do not store keys, source files or job outputs in an ephemeral Railway filesystem.
 
-Remaining live acceptance: Linux image/PostgreSQL, real IPFS pin/retrieve, Supabase persistence/key restore, Fuji deployment/sponsor funding, real Gemini Free Tier composition and Modal build, Railway/Frontend cookie flow. Local fixtures and a real disposable local EVM do not prove those external integrations.
+Remaining live acceptance: Railpack image/PostgreSQL, real IPFS pin/retrieve, Supabase persistence/key restore, Fuji deployment/sponsor funding, real Gemini Free Tier composition and Modal build, Railway/Frontend cookie flow. Local fixtures and a real disposable local EVM do not prove those external integrations.
