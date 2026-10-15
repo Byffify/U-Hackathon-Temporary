@@ -7,6 +7,7 @@ React + JavaScript frontend, built with Vite. The creator landing page adapts `F
 Requires Node.js 22.12 or later (the lockfile records exact dependencies).
 
 ```sh
+cd frontend
 npm install
 npm run dev
 ```
@@ -23,23 +24,27 @@ npm run preview
 ## Structure
 
 ```text
-src/
-  main.jsx                React entrypoint
-  App.jsx                 Landing and dialog coordination
-  pages/                  Page-level composition
-  components/
-    landing/              Hero artwork, creator showcase, U-Bot, FAQ
-    dialogs/              Creator, project, fee, and plan dialog content
-    layout/               Shared site header and footer
-    ui/                   Shared accessible modal
-  data/                   Clearly labeled illustrative content
-  hooks/                  Reusable React hooks for responsive behavior
-  lib/                    Browser wallet integration boundary
-  utils/                  Exact fee calculations and local interaction events
-  styles/                 Global CSS and generated design tokens
-public/                   Static public assets
-scripts/                  Token generation, drift checks, and syntax checks
-tests/                    Behavior tests
+frontend/
+  package.json            Frontend dependencies and commands
+  index.html              Vite HTML entrypoint
+  src/
+    main.jsx              React entrypoint
+    App.jsx               Landing and dialog coordination
+    pages/                Page-level composition
+    components/
+      landing/            Hero artwork, creator showcase, U-Bot, FAQ
+      dialogs/            Creator, project, fee, and plan dialog content
+      layout/             Shared site header and footer
+      ui/                 Shared accessible modal
+    data/                 Clearly labeled illustrative content
+    hooks/                Reusable React hooks for responsive behavior
+    lib/                  Browser wallet integration boundary
+    utils/                Exact fee calculations and local interaction events
+    styles/               Global CSS and generated design tokens
+  public/                 Static public assets
+  scripts/                Token generation, drift checks, and syntax checks
+  tests/                  Behavior tests
+  DESIGN.md               Frontend design tokens and component guidance
 docs/                     Product decisions, ADRs, and verification evidence
 .scratch/u-topia-mvp/      Product spec and draft tickets
 ```
@@ -54,7 +59,7 @@ Not connected: backend authentication, source encryption/IPFS uploads, payment c
 
 ## Design tokens
 
-`DESIGN.md` is the token source. After changing token frontmatter:
+`frontend/DESIGN.md` is the token source. Run these commands from `frontend/` after changing token frontmatter:
 
 ```sh
 npm run tokens

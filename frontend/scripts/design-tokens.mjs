@@ -30,7 +30,7 @@ for (const prefix of Object.values(prefixes)) {
 const css = `/* Generated from DESIGN.md. Run npm run tokens; do not hand-edit. */\n:root {\n${tokens.map(([name, value]) => `  ${name}: ${value};`).join("\n")}\n}\n`;
 const target = new URL("src/styles/tokens.css", root);
 if (process.argv.includes("--check")) {
-  if ((await readFile(target, "utf8")) !== css)
+  if ((await readFile(target, "utf8")).replaceAll("\r\n", "\n") !== css)
     throw new Error("Runtime token drift. Run npm run tokens.");
   const styles = await readFile(new URL("src/styles/index.css", root), "utf8");
   const defined = new Set([
