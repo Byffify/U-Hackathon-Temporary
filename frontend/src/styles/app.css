@@ -476,7 +476,9 @@
 .app-workspace {
   display: grid;
   grid-template-columns: 228px minmax(0, 1fr);
-  min-height: calc(100vh - 125px);
+  align-items: start;
+  min-height: calc(100vh - 87px);
+  min-height: calc(100dvh - 87px);
 }
 .app-sidebar {
   border-right: 1px solid var(--color-border);
@@ -484,6 +486,18 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  position: sticky;
+  top: 87px;
+  height: calc(100vh - 87px);
+  height: calc(100dvh - 87px);
+}
+.app-sidebar-links {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
 }
 .app-sidebar-label {
   font-size: 11px;
@@ -491,26 +505,24 @@
   letter-spacing: 0.1em;
   margin: 0 12px 20px;
 }
-.app-sidebar > a,
-.app-drawer-nav > a {
+.app-sidebar-links > a {
   padding: 14px 16px;
   border-radius: var(--radius-small);
   text-decoration: none;
   min-height: 48px;
   font-weight: 500;
 }
-.app-sidebar > a:hover,
-.app-drawer-nav > a:hover {
+.app-sidebar-links > a:hover {
   background: var(--color-surface);
 }
-.app-sidebar > a.active,
-.app-drawer-nav > a.active {
+.app-sidebar-links > a.active {
   background: var(--color-lime);
   color: var(--color-ink);
 }
 .app-sidebar-note {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 12px;
   padding: 12px;
   font-size: 13px;
@@ -554,6 +566,9 @@
 .app-drawer-nav {
   display: flex;
   flex-direction: column;
+}
+.app-drawer-nav .app-sidebar-links {
+  overflow: visible;
 }
 .app-list {
   margin: 0;

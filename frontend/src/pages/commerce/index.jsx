@@ -304,20 +304,6 @@ export function ProfileSettingsPage() {
           </Link>
         </div>
       </form>
-      <section className="app-card app-stack" aria-label="Profile preview">
-        <h2>Profile preview</h2>
-        {screenshotUrl(values.avatarUrl) && (
-          <img
-            src={screenshotUrl(values.avatarUrl)}
-            alt="Your profile avatar"
-            width="96"
-            height="96"
-            style={{ objectFit: "cover", borderRadius: "50%" }}
-          />
-        )}
-        <h3>{values.name.trim() || "Your display name"}</h3>
-        <p>{values.bio.trim() || "Your bio will appear here."}</p>
-      </section>
     </>
   );
 }

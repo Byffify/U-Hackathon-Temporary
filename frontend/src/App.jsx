@@ -199,14 +199,16 @@ function WorkspaceShell() {
   useEffect(() => setMenu(false), [location.pathname]);
   const nav = (
     <>
-      <p className="app-sidebar-label">YOUR WORKSPACE</p>
-      <NavLink to="/library">My library</NavLink>
-      <NavLink to="/workspace/projects">My projects</NavLink>
-      <NavLink to="/gemini">AI</NavLink>
-      <NavLink to="/settings/profile">Profile settings</NavLink>
-      <NavLink className="app-sidebar-explore" to="/explore">
-        Explore
-      </NavLink>
+      <div className="app-sidebar-links">
+        <p className="app-sidebar-label">YOUR WORKSPACE</p>
+        <NavLink to="/library">My library</NavLink>
+        <NavLink to="/workspace/projects">My projects</NavLink>
+        <NavLink to="/gemini">AI</NavLink>
+        <NavLink to="/settings/profile">Profile settings</NavLink>
+        <NavLink className="app-sidebar-explore" to="/explore">
+          Explore
+        </NavLink>
+      </div>
       <div className="app-sidebar-note">
         <span className="app-sidebar-mark" aria-hidden="true">
           <svg
