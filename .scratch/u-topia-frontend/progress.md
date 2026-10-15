@@ -22,3 +22,6 @@ Completion 2026-10-16: all six frontend tasks complete. Verification: npm run ch
 
 2026-10-16 section slide clarification: issue08 updated to reversible whole-section motion, superseding component arrivals. Flow/DS preserved; focused section stays neutral. Verified25 logic /17 UI /17 browser, check+format+build pass;1440/390 screenshots inspected.
 
+
+2026-10-16 reference motion: desktop sticky panels implemented from user-supplied u-topia.com reference; mobile/reduced-motion/keyboard alternatives preserved.25logic/17UI/18browser plus check/format/build pass.
+

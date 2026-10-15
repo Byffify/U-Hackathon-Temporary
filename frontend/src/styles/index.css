@@ -38,6 +38,17 @@ body {
 body.modal-open {
   overflow: hidden;
 }
+.landing-stack {
+  isolation: isolate;
+}
+.landing-stack-panel {
+  position: sticky;
+  background: var(--color-page);
+  display: flow-root;
+}
+.landing-keyboard .landing-stack-panel {
+  position: static;
+}
 button,
 input,
 select,
@@ -398,6 +409,26 @@ h1 {
 .highlight-word {
   position: relative;
   white-space: nowrap;
+}
+.hero-word-window {
+  display: inline-block;
+  height: 1.15em;
+  overflow: clip;
+  vertical-align: bottom;
+  text-align: center;
+}
+.hero-word-track {
+  display: block;
+  width: max-content;
+}
+.hero-word-track > span {
+  display: block;
+  height: 1.15em;
+  white-space: nowrap;
+  width: max-content;
+}
+.hero-word-track:not(.hero-words-active) > span:not(:first-child) {
+  display: none;
 }
 .highlight-word:before {
   content: "";

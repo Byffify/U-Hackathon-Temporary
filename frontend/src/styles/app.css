@@ -493,11 +493,21 @@
   color: var(--color-ink);
 }
 .app-sidebar-note {
-  margin-top: auto;
-  padding: 48px 12px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
   font-size: 13px;
   color: var(--color-muted);
   line-height: 1.6;
+}
+.app-sidebar-explore {
+  margin-top: auto;
+}
+.app-sidebar-user-name {
+  overflow-wrap: anywhere;
+  min-width: 0;
+  color: var(--color-ink);
 }
 .app-sidebar-note a {
   color: var(--color-ink);
@@ -508,6 +518,7 @@
   background: var(--color-lilac);
   width: 40px;
   height: 40px;
+  flex-shrink: 0;
   border-radius: 50%;
   font: 700 20px var(--font-display);
   color: var(--color-ink);

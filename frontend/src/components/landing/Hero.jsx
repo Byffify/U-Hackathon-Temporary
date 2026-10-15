@@ -10,8 +10,20 @@ export default function Hero({ actions }) {
           </span>{" "}
           A NEW HOME FOR WHAT YOU BUILD
         </p>
-        <h1 id="hero-title">
-          Good work deserves
+        <h1 id="hero-title" aria-label="Your work deserves a next chapter.">
+          <span aria-hidden="true">
+            Your{" "}
+            <span className="hero-word-window">
+              <span className="hero-word-track">
+                {["work", "code", "website", "project", "work"].map(
+                  (word, index) => (
+                    <span key={`${word}-${index}`}>{word}</span>
+                  ),
+                )}
+              </span>
+            </span>{" "}
+            deserves
+          </span>
           <br />a{" "}
           <span className="highlight-word">
             next chapter.
