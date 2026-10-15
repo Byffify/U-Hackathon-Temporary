@@ -576,11 +576,11 @@ function demoService(storage) {
 // API integration contract. Path params come from payload; unused fields form query/body.
 export const API_ROUTES = {
   "auth.session": ["GET", "/auth/session"],
-  "auth.challenge": ["POST", "/auth/challenge"],
+  "auth.challenge": ["POST", "/auth/challenges"],
   "auth.verify": ["POST", "/auth/verify"],
   "auth.logout": ["POST", "/auth/logout"],
-  "profiles.get": ["GET", "/profiles/:id"],
-  "profiles.update": ["PATCH", "/profiles/me"],
+  "profiles.get": ["GET", "/creators/:id"],
+  "profiles.update": ["PATCH", "/me/profile"],
   "projects.list": ["GET", "/projects"],
   "projects.get": ["GET", "/projects/:id"],
   "projects.save": ["POST", "/projects"],
@@ -610,6 +610,7 @@ export const API_ROUTES = {
 };
 function apiService(baseUrl, fetchImpl) {
   const root = String(baseUrl).replace(/\/$/, "");
+  let csrfToken = null;
   if (!(root.startsWith("/") && !root.startsWith("//"))) safeUrl(root);
   const errorFrom = (data, status, operation) => {
     if (
@@ -634,7 +635,20 @@ function apiService(baseUrl, fetchImpl) {
         fail("UNKNOWN_OPERATION", `Unknown service operation: ${operation}`);
       let [method, path] = route;
       const p = { ...payload };
-      if (operation === "profiles.get" && !p.id) p.id = "me";
+      if (operation === "profiles.get" && !p.id) path = "/me/profile";
+      if (operation === "auth.challenge") {
+        p.chain_id = Number(p.chainId);
+        delete p.chainId;
+      }
+      if (operation === "auth.verify") {
+        p.challenge_id = p.challengeId;
+        delete p.challengeId;
+        delete p.address;
+      }
+      if (operation === "profiles.update" && "avatarUrl" in p) {
+        p.avatar_url = p.avatarUrl || null;
+        delete p.avatarUrl;
+      }
       if (operation === "projects.save" && p.id) {
         method = "PATCH";
         path = "/projects/:id";
@@ -653,6 +667,12 @@ function apiService(baseUrl, fetchImpl) {
       });
       delete p.onProgress;
       const headers = { Accept: "application/json" };
+      if (
+        csrfToken &&
+        method !== "GET" &&
+        !["auth.challenge", "auth.verify"].includes(operation)
+      )
+        headers["X-CSRF-Token"] = csrfToken;
       if (payload.idempotencyKey)
         headers["Idempotency-Key"] = payload.idempotencyKey;
       let url = `${root}${path}`,
@@ -678,6 +698,9 @@ function apiService(baseUrl, fetchImpl) {
             xhr.open(method, url);
             xhr.withCredentials = true;
             xhr.setRequestHeader("Accept", "application/json");
+            if (csrfToken) xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+            if (payload.idempotencyKey)
+              xhr.setRequestHeader("Idempotency-Key", payload.idempotencyKey);
             xhr.upload.onprogress = (e) => {
               if (e.lengthComputable)
                 payload.onProgress?.(Math.round((e.loaded / e.total) * 100));
@@ -738,8 +761,25 @@ function apiService(baseUrl, fetchImpl) {
         if (!response.ok) throw errorFrom(null, response.status, operation);
         fail("INVALID_RESPONSE", "The API returned an invalid response.");
       }
-      if (!response.ok) throw errorFrom(data, response.status, operation);
+      if (!response.ok) {
+        if (
+          operation === "auth.session" &&
+          response.status === 401 &&
+          data?.error?.code === "UNAUTHENTICATED"
+        ) {
+          csrfToken = null;
+          return null;
+        }
+        throw errorFrom(data, response.status, operation);
+      }
       const result = data?.data ?? data;
+      if (operation === "auth.session" || operation === "auth.verify") {
+        csrfToken = result.csrf_token;
+        return result.user;
+      }
+      if (operation === "auth.logout") csrfToken = null;
+      if (operation === "profiles.get" || operation === "profiles.update")
+        return { ...result, avatarUrl: result.avatar_url };
       if (operation.endsWith(".download") && result?.url) safeUrl(result.url);
       return result;
     },

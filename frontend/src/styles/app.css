@@ -258,6 +258,19 @@
 .app-field textarea {
   resize: vertical;
 }
+.app-field textarea.resize-none,
+.app-form textarea.resize-none,
+.gemini-workspace textarea.resize-none {
+  resize: none;
+  field-sizing: content;
+  min-height: 6rem;
+  max-height: 28rem;
+  overflow-y: auto;
+}
+.app-validation-error {
+  color: var(--color-danger, #9a1c1c);
+  font-weight: 600;
+}
 .app-form progress {
   width: 100%;
   accent-color: var(--color-lime-deep);

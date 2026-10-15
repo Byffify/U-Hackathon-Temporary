@@ -10,6 +10,8 @@ import {
   ErrorState,
   useTask,
   useDirtyGuard,
+  useFormValidation,
+  FormValidationError,
 } from "../../app/ui.jsx";
 import "./gemini.css";
 import { currentPlanJob, transcriptMatchesPlan } from "./model.js";
@@ -31,7 +33,7 @@ export function GeminiHome() {
         Start with source you own. Ask questions, review a plan, then decide
         when to generate.
       </PageTitle>
-      <form className="app-card app-form" onSubmit={create}>
+      <form noValidate className="app-card app-form" onSubmit={create}>
         <h2>A new conversation</h2>
         <label className="app-field">
           Conversation name
@@ -89,6 +91,7 @@ export function GeminiChat() {
     [service, chatId],
   );
   const task = useTask();
+  const validation = useFormValidation();
   const [chat, setChat] = useState(null);
   const [selected, setSelected] = useState([]);
   const [stack, setStack] = useState("");
@@ -362,6 +365,7 @@ export function GeminiChat() {
           <label className="app-field">
             What should this project do?
             <textarea
+              className="resize-none"
               rows={5}
               value={instruction}
               onChange={(event) => change(setInstruction, event.target.value)}
@@ -420,15 +424,19 @@ export function GeminiChat() {
           <details>
             <summary>Import open-source context</summary>
             <form
+              noValidate
               className="app-form"
+              onInput={validation.onInput}
               onSubmit={async (event) => {
                 event.preventDefault();
+                if (!validation.validate(event.currentTarget)) return;
                 const result = await task.run(() =>
                   service.call("gemini.import", origin),
                 );
                 if (result) resource.reload();
               }}
             >
+              <FormValidationError validation={validation} />
               <p className="app-muted">
                 The backend must verify the origin, immutable snapshot, license,
                 and evidence before source can be used. A declaration alone does
@@ -487,10 +495,11 @@ export function GeminiChat() {
                 </p>
               )}
             </div>
-            <form className="app-form" onSubmit={send}>
+            <form noValidate className="app-form" onSubmit={send}>
               <label className="app-field">
                 Ask or explain
                 <textarea
+                  className="resize-none"
                   rows={3}
                   disabled={task.busy}
                   value={message}

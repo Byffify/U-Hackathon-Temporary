@@ -15,7 +15,7 @@
     "test": "node --test tests/*.test.mjs src/pages/commerce/helpers.test.mjs",
     "build": "vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4173",
-    "test:ui": "vitest run",
+    "test:ui": "vitest run --maxWorkers=1 --no-file-parallelism",
     "test:browser": "playwright test"
   },
   "engines": {

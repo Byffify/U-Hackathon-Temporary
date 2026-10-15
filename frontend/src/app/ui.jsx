@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link, useBlocker } from "react-router-dom";
 import { ProjectArt } from "../components/landing/ProjectArt.jsx";
 import { formatAvax } from "../utils/pricing.js";
@@ -24,6 +24,47 @@ export function Notice({ children, tone = "info" }) {
       {children}
     </div>
   );
+}
+export function useFormValidation() {
+  const id = useId();
+  const [message, setMessage] = useState("");
+  const invalidField = useRef(null);
+  const clear = useCallback(() => {
+    if (invalidField.current) {
+      invalidField.current.removeAttribute("aria-invalid");
+      invalidField.current.removeAttribute("aria-describedby");
+      invalidField.current = null;
+    }
+    setMessage("");
+  }, []);
+  const validate = useCallback(
+    (form) => {
+      clear();
+      const field = [...form.elements].find(
+        (element) => element.willValidate && !element.checkValidity(),
+      );
+      if (!field) return true;
+      const label =
+        field.labels?.[0]?.querySelector("span")?.textContent ||
+        field.labels?.[0]?.textContent?.trim() ||
+        "This field";
+      setMessage(`${label}: ${field.validationMessage}`);
+      field.setAttribute("aria-invalid", "true");
+      field.setAttribute("aria-describedby", id);
+      invalidField.current = field;
+      field.focus();
+      return false;
+    },
+    [clear, id],
+  );
+  return { id, message, validate, onInput: clear };
+}
+export function FormValidationError({ validation }) {
+  return validation.message ? (
+    <p id={validation.id} className="app-validation-error" role="alert">
+      {validation.message}
+    </p>
+  ) : null;
 }
 export function Empty({ title, children }) {
   return (

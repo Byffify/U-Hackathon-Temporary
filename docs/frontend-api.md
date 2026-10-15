@@ -1,6 +1,6 @@
 # Frontend API contract
 
-`frontend/src/services/index.js` exports `createService({mode='demo',baseUrl='/api/v1',storage,fetchImpl})`, singleton `service`, `mode`, and `API_ROUTES`. Call `await service.call(operation,payload={})`. Set `VITE_SERVICE_MODE=api` and optionally `VITE_API_BASE_URL` to use the live backend. API mode never falls back to demo.
+`frontend/src/services/index.js` exports `createService({mode='demo',baseUrl='/api/v1',storage,fetchImpl})`, singleton `service`, `mode`, and `API_ROUTES`. Call `await service.call(operation,payload={})`. Set `VITE_SERVICE_MODE=api` and optionally `VITE_API_BASE_URL` to use the live backend. API mode never falls back to demo. Auth and profile routes below match the delivered FastAPI backend; the remaining routes are a proposed interface and are not implemented by that backend yet.
 
 Requests include cookies (`credentials: include`; multipart XHR uses `withCredentials`). Configure backend session cookies, CORS allowlist, and CSRF protection. The server independently validates authentication, ownership, payment, file contents, rights, and inputs. No provider secret belongs in browser code.
 
@@ -15,11 +15,11 @@ The table is derived from API_ROUTES. Paths are relative to the configured API b
 | Operation         | Method | Path                                 |
 | ----------------- | ------ | ------------------------------------ |
 | auth.session      | GET    | /auth/session                        |
-| auth.challenge    | POST   | /auth/challenge                      |
+| auth.challenge    | POST   | /auth/challenges                     |
 | auth.verify       | POST   | /auth/verify                         |
 | auth.logout       | POST   | /auth/logout                         |
-| profiles.get      | GET    | /profiles/:id                        |
-| profiles.update   | PATCH  | /profiles/me                         |
+| profiles.get      | GET    | /me/profile or /creators/:id         |
+| profiles.update   | PATCH  | /me/profile                          |
 | projects.list     | GET    | /projects                            |
 | projects.get      | GET    | /projects/:id                        |
 | projects.save     | POST   | /projects                            |
@@ -51,10 +51,10 @@ The table is derived from API_ROUTES. Paths are relative to the configured API b
 
 | Operation         | Input payload                                                                                                        | Result                                             |
 | ----------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
-| auth.session      | none                                                                                                                 | User or null                                       |
-| auth.challenge    | address, chainId                                                                                                     | {challengeId,message}; message is signed by wallet |
-| auth.verify       | challengeId,address,signature                                                                                        | User; backend sets session cookie                  |
-| auth.logout       | none                                                                                                                 | null; session revoked                              |
+| auth.session      | none                                                                                                                 | User or null; stores CSRF token in adapter         |
+| auth.challenge    | address, chainId                                                                                                     | {id,message}; message is signed by wallet          |
+| auth.verify       | challengeId,address,signature                                                                                        | User; backend sets session cookie and CSRF token   |
+| auth.logout       | none                                                                                                                 | Session revoked with CSRF header                    |
 | auth.demoLogin    | account buyer or creator                                                                                             | User; demo only, no API route                      |
 | profiles.get      | id optional, defaults me                                                                                             | Profile                                            |
 | profiles.update   | name,bio,avatarUrl?                                                                                                  | Profile                                            |
