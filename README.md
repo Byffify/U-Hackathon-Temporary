@@ -2,6 +2,8 @@
 
 React + JavaScript frontend, built with Vite. The creator landing page adapts `FASTWORK_SELLING_UX_UI_SPEC_TH.md` to the agreed U-topia business rules.
 
+Python Backend foundation is now in [`backend/`](backend/README.md): FastAPI wallet-signature login, persistent sessions, public/own profiles, SQL migrations, HTTP tests, Docker and Railway configuration. Frontend integration and marketplace/Gemini/contract services are not connected yet. See the backend README for local commands and exact delivery limits.
+
 ## Run
 
 Requires Node.js 22.12 or later (the lockfile records exact dependencies).
@@ -55,7 +57,7 @@ The frontend is plain JavaScript and JSX, not TypeScript. Components own their R
 
 Working UI: creator/profile tabs and keyboard navigation, example project search and details, a 90/10 test AVAX fee calculator, source-feature selection, custom stack selection, plan preview, native modal focus handling, and optional injected-wallet address connection.
 
-Not connected: backend authentication, source encryption/IPFS uploads, payment contracts and gas sponsorship, source downloads, and AI generation. Example projects are illustrative, not purchasable listings. Wallet connection requests an address only; it does not authenticate a server session, request signatures, or make a payment.
+Not connected to the frontend: backend authentication, source encryption/IPFS uploads, payment contracts and gas sponsorship, source downloads, and AI generation. The backend authentication API exists separately; the current frontend wallet connection still requests an address only and does not authenticate a server session. Example projects are illustrative, not purchasable listings.
 
 ## Design tokens
 

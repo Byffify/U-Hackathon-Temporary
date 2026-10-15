@@ -1,0 +1,95 @@
+# U-topia Python backend
+
+Implemented delivery: wallet authentication and profiles. No runtime mock-success endpoints. Marketplace, source storage, sponsored contracts, Gemini chat and workers are subsequent deliveries in the parent plan, not working integrations in this package yet.
+
+## Local development
+
+Python 3.12 or newer. Run from `backend/`:
+
+```powershell
+python -m venv .venv
+.venv/Scripts/python.exe -m pip install -r requirements.lock
+.venv/Scripts/python.exe -m pip install -e ".[dev]"
+Copy-Item .env.example .env
+.venv/Scripts/python.exe -m alembic upgrade head
+.venv/Scripts/python.exe -m uvicorn app.main:create_app --factory --reload --host 127.0.0.1 --port 8000
+```
+
+Linux/macOS use `.venv/bin/python` instead. The checked-in `requirements.lock` pins runtime dependencies; `pyproject.toml` contains the development extras.
+
+- Swagger UI: http://127.0.0.1:8000/docs
+- Live API contract: http://127.0.0.1:8000/openapi.json
+- Exported contract for FE: `openapi.json` (regenerate after interface changes)
+- Liveness: `/health/live`; database/schema readiness: `/health/ready`
+- SQLite file `utopia.db` persists local data. Runtime does not create tables automatically; migrations are required. PostgreSQL is required when `ENVIRONMENT=production`.
+
+Use `localhost:4173` for the frontend by default, matching the signed message domain and URI. If using `127.0.0.1:4173`, change both AUTH_DOMAIN/AUTH_URI accordingly. Keep the configured frontend origin consistent with the API hostname during local development, or proxy `/api` through Vite: browsers may block cookies between different sites even when CORS allows them.
+
+The bundled Codex Python 3.12 on this workstation lacks ensurepip. Its venv was bootstrapped using system pip's `--python backend/.venv/Scripts/python.exe` support; a normal Python installation can use the commands above directly.
+
+## API delivered
+
+All successful responses wrap the payload in `{ "data": ... }`. Every request receives X-Request-ID; API responses use Cache-Control: no-store. Errors use:
+
+```json
+{
+  "error": {
+    "code": "UNAUTHENTICATED",
+    "message": "Sign in with your wallet to continue.",
+    "field_errors": {},
+    "retryable": false
+  },
+  "request_id": "opaque-request-id"
+}
+```
+
+| Method/path | Input/output |
+| --- | --- |
+| POST `/api/v1/auth/challenges` | `{address, chain_id:43113}` → `{id,message,expires_at}`; sets HttpOnly browser-binding cookie |
+| POST `/api/v1/auth/verify` | `{challenge_id,signature}` → `{user:{id,address},csrf_token}`; sets HttpOnly session cookie |
+| GET `/api/v1/auth/session` | Current `{user,csrf_token}` or 401 |
+| POST `/api/v1/auth/logout` | Requires session, Origin and X-CSRF-Token; revokes session |
+| GET `/api/v1/me/profile` | Current profile, authentication required |
+| PATCH `/api/v1/me/profile` | Optional `name`, `bio`, `avatar_url`; update only submitted fields; requires session/Origin/CSRF |
+| GET `/api/v1/creators/{id}` | Public `{id,name,bio,avatar_url}`, no wallet/session information |
+
+Profile limits: name 1–80 characters, bio at most 2000, HTTP(S) avatar URL at most 2048 characters. `avatar_url:null` clears the image. Name/bio cannot be null; unknown fields and empty PATCH are rejected. File upload for avatars is not implemented; image URLs work.
+
+### Frontend login sequence
+
+1. Call the injected wallet's `eth_requestAccounts`, ensure Fuji chain 43113.
+2. POST `/auth/challenges` using `credentials:"include"`; sign exactly the returned message with EIP-191 `personal_sign` (UTF-8 message encoded to hex for wallets that require hex parameters).
+3. POST `/auth/verify` with the returned ID and signature, again including cookies. The browser-binding cookie from step 2 must be present.
+4. Keep `csrf_token` in memory; include it in `X-CSRF-Token` for profile mutations/logout. Recover it after refresh via GET `/auth/session`.
+5. On 401 clear the authenticated UI state and reconnect; connection alone never authenticates. Backend messages/fields are English.
+
+All browser fetches need `credentials:"include"`. Browser supplies Origin automatically; do not add a wildcard CORS origin. curl/non-browser integration clients must send an allowed Origin on auth POST and authenticated mutations.
+
+Auth supports EOA wallets using 65-byte personal-sign signatures only. ERC-1271 contract-wallet verification, wallet linking/recovery and access-token purchase are not implemented. Challenges expire in five minutes and are consumed atomically. Sessions expire in 24 hours by default, are stored only as hashes, survive process restart, and are revoked on logout/rotation.
+
+## Tests and checks
+
+```powershell
+.venv/Scripts/python.exe -m pytest -q
+.venv/Scripts/ruff.exe check .
+.venv/Scripts/ruff.exe format --check .
+```
+
+Tests use disposable signing keys and independent SQLite files, real HTTP application boundaries, signature recovery and migrations. They do not invoke Gemini, IPFS, Fuji or a hosted database. If the desktop sandbox denies pytest's temp-directory access, run tests with the authorized terminal permissions; this is not an application failure.
+
+For a local PostgreSQL deployment, run `docker compose up --build` from the project root. The migration service runs once before the API starts. Compose credentials are local-development values, not cloud credentials. Docker Engine must be running. Do not use `docker compose down -v` unless you intend to remove the local database volume.
+
+## Railway configuration
+
+Deploying is a separate operation; no Railway service has been created from this package.
+
+1. Configure the API service Root Directory as `/backend` and Config File as `/backend/railway.toml` ([Railway monorepo docs](https://docs.railway.com/deployments/monorepo)). Set up a persistent PostgreSQL database and backup.
+2. Set DATABASE_URL to its PostgreSQL connection URL (SSL as required by the database provider), ENVIRONMENT=production, COOKIE_SECURE=true, AUTH_DOMAIN to the frontend host, AUTH_URI to its HTTPS origin, and FRONTEND_ORIGINS to a JSON array of exact allowed HTTPS origins.
+3. Use COOKIE_SAMESITE=none when FE/API are on different sites; cross-site browser cookie policies may still block third-party cookies. For reliable browser sessions prefer custom subdomains of the same site or a frontend same-origin reverse proxy. Same-site deployment can use lax.
+4. `railway.toml` runs `python -m alembic upgrade head` as a pre-deploy command and checks `/health/ready`. Docker starts Uvicorn using Railway's PORT; migrations are not run at image build time.
+5. Disable serverless sleep if the demo must remain warm, and monitor actual trial credit usage. Trial credit is not an uptime guarantee or unlimited free hosting.
+6. Auth rate limit defaults to 30 requests/minute per ASGI client peer across challenge and verify. Counters live in SQL, shared by workers/restarts. Configure forwarded-client handling only for a verified trusted proxy path; never blindly trust arbitrary X-Forwarded-For. Without trusted proxy configuration, users behind the same proxy may share a limit. Adjust the demo budget intentionally, not by trusting user-supplied IP headers.
+
+## Not yet delivered
+
+Projects/uploads/IPFS/key custody, commerce/Solidity/gas sponsorship, library/resale, Gemini chat/plans/quota/workers and sandbox output generation remain subsequent plan deliveries. No Gemini API key is needed for this identity package, and this package does not claim AI output or on-chain verification. Production PostgreSQL execution and the Docker image must be checked against running infrastructure before deployment acceptance.

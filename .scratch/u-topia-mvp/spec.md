@@ -105,7 +105,7 @@ U-Bot เป็นบริการเสริมเฉพาะงานร�
 
 ### Proposed module contracts for written-spec review
 
-These rules make the agreed behavior implementable and testable. They do not select a concrete framework, database, pinning vendor, model vendor, or gas-sponsorship provider.
+These rules make the agreed behavior implementable and testable. They do not select a concrete framework, database, pinning vendor, or gas-sponsorship provider. The user subsequently selected Google Gemini API as the model provider on 15 October 2026; the model version remains configurable and unselected.
 
 1. **Identity and profiles:** issue a short-lived, one-time signing challenge bound to this application; validate ownership, expiry, and replay protection before issuing a session. Mutations act on the session identity, not an arbitrary submitted address. A wallet address is one account; wallet linking or recovery is not inferred.
 2. **Listings and releases:** maintain listing identity, creator, metadata, demo URL, stack declaration, price, license terms, and versioned encrypted releases. Technical validation and completed storage precede a buyable published state; human approval is not required. Creating a new release in the same listing does not require old buyers to purchase again.
@@ -187,7 +187,7 @@ These exclusions reflect the user's decisions or technical limits, not removal o
 
 ### Deployment prerequisites held open explicitly
 
-- **Model provider:** the user requested deferring this choice. A name heard as Tokenomit has not been tied to confirmed documentation. If it means Tokenomist, the documentation checked describes a tokenomics-data API, not the code-generation model. Do not treat those as interchangeable or expose a secret key in the product UI.
+- **Model provider:** the user selected Google Gemini API on 15 October 2026, superseding the earlier deferred selection. The Python backend uses `google-genai`, with `GEMINI_API_KEY` server-side and a configurable `GEMINI_MODEL`. Model selection, credentials, rate limits, and real integration verification remain deployment prerequisites. Gemini supplies analysis/generation; generated-code execution and validation remain isolated sandbox responsibilities.
 - **Quota configuration:** choose the initial allowance, unit conversion, analysis/generation budget rules, and trial end against the actual selected model's usage and platform budget. The behavior above is specified, but the numeric deployment settings remain a launch prerequisite rather than an invented product decision.
 - **Sponsored-payment infrastructure:** choose and validate a Fuji-compatible implementation that can authorize the buyer's native payment while the platform funds gas. Provider credentials and test funding are operational prerequisites. A design that makes the buyer pay gas separately contradicts the agreed fee model.
 - **Hosting and IPFS:** provision application hosting, persistent account/job/key storage, encryption-key protection, and IPFS pinning. Choice of vendor remains an implementation planning decision; storage persistence and successful restoration must be verified.
