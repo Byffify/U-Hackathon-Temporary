@@ -109,6 +109,21 @@ test("unsaved profile changes require an explicit navigation choice", async ({
   await page.getByRole("button", { name: "Save profile" }).click();
   await expect(page.getByText("Profile saved.", { exact: true })).toBeVisible();
 });
+test("profile validation keeps values and focuses the field to correct", async ({
+  page,
+}) => {
+  await login(page);
+  await page.goto("/settings/profile");
+  const name = page.getByLabel("Display name");
+  await name.fill("");
+  await page.getByRole("button", { name: "Save profile" }).click();
+  await expect(page.getByRole("alert")).toContainText("Display name:");
+  await expect(name).toBeFocused();
+  await expect(name).toHaveAttribute("aria-invalid", "true");
+  await name.fill("Corrected Name");
+  await page.getByRole("button", { name: "Save profile" }).click();
+  await expect(page.getByText("Profile saved.", { exact: true })).toBeVisible();
+});
 test("Gemini requires quote and explicit confirmation, supports three sources and persists chat", async ({
   page,
 }) => {

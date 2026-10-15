@@ -37,6 +37,7 @@ export function ExplorePage() {
         Independent websites. Useful source. Something to build on.
       </PageTitle>
       <form
+        noValidate
         className="app-search"
         role="search"
         onSubmit={(e) => {

@@ -177,6 +177,101 @@ test("API uses authenticated requests, structured errors, and never falls back t
     code: "INVALID_URL",
   });
 });
+
+test("API auth and profiles follow the delivered backend contract", async () => {
+  const calls = [];
+  const s = createService({
+    mode: "api",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      const result = url.endsWith("/auth/session")
+        ? {
+            user: {
+              id: "user-1",
+              address: "0x1111111111111111111111111111111111111111",
+            },
+            csrf_token: "csrf-1",
+          }
+        : url.endsWith("/auth/challenges")
+          ? { id: "challenge-1", message: "Sign in to U-topia" }
+          : url.endsWith("/auth/verify")
+            ? {
+                user: {
+                  id: "user-1",
+                  address: "0x1111111111111111111111111111111111111111",
+                },
+                csrf_token: "csrf-1",
+              }
+            : url.endsWith("/me/profile") || url.endsWith("/creators/creator-1")
+              ? {
+                  id: "user-1",
+                  name: "Creator",
+                  bio: "Maker",
+                  avatar_url: "https://example.test/avatar.png",
+                }
+              : { logged_out: true };
+      return { ok: true, status: 200, json: async () => ({ data: result }) };
+    },
+  });
+  assert.equal((await s.call("auth.session")).id, "user-1");
+  assert.equal(
+    (
+      await s.call("auth.challenge", {
+        address: "0x1111111111111111111111111111111111111111",
+        chainId: "0xa869",
+      })
+    ).id,
+    "challenge-1",
+  );
+  await s.call("auth.verify", {
+    challengeId: "challenge-1",
+    address: "0x1111111111111111111111111111111111111111",
+    signature: "0xsignature",
+  });
+  assert.equal(
+    (await s.call("profiles.get")).avatarUrl,
+    "https://example.test/avatar.png",
+  );
+  await s.call("profiles.update", {
+    name: "Creator",
+    bio: "Maker",
+    avatarUrl: "https://example.test/avatar.png",
+  });
+  await s.call("profiles.get", { id: "creator-1" });
+  await s.call("auth.logout");
+  assert.equal(calls[1].url, "/api/v1/auth/challenges");
+  assert.deepEqual(JSON.parse(calls[1].options.body), {
+    address: "0x1111111111111111111111111111111111111111",
+    chain_id: 43113,
+  });
+  assert.deepEqual(JSON.parse(calls[2].options.body), {
+    challenge_id: "challenge-1",
+    signature: "0xsignature",
+  });
+  assert.equal(calls[3].url, "/api/v1/me/profile");
+  assert.equal(calls[4].options.headers["X-CSRF-Token"], "csrf-1");
+  assert.deepEqual(JSON.parse(calls[4].options.body), {
+    name: "Creator",
+    bio: "Maker",
+    avatar_url: "https://example.test/avatar.png",
+  });
+  assert.equal(calls[5].url, "/api/v1/creators/creator-1");
+  assert.equal(calls[6].options.headers["X-CSRF-Token"], "csrf-1");
+});
+
+test("an unauthenticated initial API session is a signed-out state", async () => {
+  const s = createService({
+    mode: "api",
+    fetchImpl: async () => ({
+      ok: false,
+      status: 401,
+      json: async () => ({
+        error: { code: "UNAUTHENTICATED", message: "Sign in" },
+      }),
+    }),
+  });
+  assert.equal(await s.call("auth.session"), null);
+});
 test("Gemini API operations use chatId and allow standalone external source import", async () => {
   const calls = [],
     s = createService({
@@ -233,7 +328,7 @@ test("API 401 dispatches the session-expired event", async () => {
         }),
       }),
     });
-    await assert.rejects(s.call("auth.session"), { code: "UNAUTHENTICATED" });
+    assert.equal(await s.call("auth.session"), null);
     assert.equal(expired, 0);
     await assert.rejects(s.call("library.list"), { code: "UNAUTHENTICATED" });
     assert.equal(expired, 1);

@@ -15,6 +15,8 @@ import {
   ErrorState,
   useTask,
   useDirtyGuard,
+  useFormValidation,
+  FormValidationError,
 } from "../../app/ui.jsx";
 import { splitSale, formatAvax } from "../../utils/pricing.js";
 import {
@@ -206,6 +208,10 @@ export function ConnectPage() {
 
 export function ProfileSettingsPage() {
   const { service, user, refreshSession } = useApp();
+  const profile = useResource(
+    () => service.call("profiles.get"),
+    [service, user?.id],
+  );
   const [values, setValues] = useState({
     name: user?.name || "",
     bio: user?.bio || "",
@@ -214,13 +220,25 @@ export function ProfileSettingsPage() {
   const [baseline, setBaseline] = useState(JSON.stringify(values));
   const [saved, setSaved] = useState(false);
   const task = useTask();
+  const validation = useFormValidation();
   useDirtyGuard(JSON.stringify(values) !== baseline);
+  useEffect(() => {
+    if (!profile.data) return;
+    const next = {
+      name: profile.data.name || "",
+      bio: profile.data.bio || "",
+      avatarUrl: profile.data.avatarUrl || "",
+    };
+    setValues(next);
+    setBaseline(JSON.stringify(next));
+  }, [profile.data]);
   function change(key, value) {
     setValues((old) => ({ ...old, [key]: value }));
     setSaved(false);
   }
   async function save(event) {
     event.preventDefault();
+    if (!validation.validate(event.currentTarget)) return;
     const result = await task.run(async () => {
       await service.call("profiles.update", values);
       await refreshSession();
@@ -231,12 +249,21 @@ export function ProfileSettingsPage() {
       setSaved(true);
     }
   }
+  if (profile.loading) return <Loading>Loading profile…</Loading>;
+  if (profile.error)
+    return <ErrorState error={profile.error} retry={profile.reload} />;
   return (
     <>
       <PageTitle title="Make yourself recognizable">
         Your profile appears alongside the projects you create.
       </PageTitle>
-      <form className="app-card app-form" onSubmit={save}>
+      <form
+        noValidate
+        className="app-card app-form"
+        onSubmit={save}
+        onInput={validation.onInput}
+      >
+        <FormValidationError validation={validation} />
         <TaskError error={task.error} />
         {saved && <Notice tone="success">Profile saved.</Notice>}
         <Field label="Display name">
@@ -251,6 +278,7 @@ export function ProfileSettingsPage() {
         </Field>
         <Field label="Bio">
           <textarea
+            className="resize-none"
             disabled={task.busy}
             rows={4}
             maxLength={1000}
@@ -447,6 +475,7 @@ function ProjectForm({ project }) {
   const [imageUpload, setImageUpload] = useState(null);
   const [imageProgress, setImageProgress] = useState(0);
   const task = useTask();
+  const validation = useFormValidation();
   const formRef = useRef(null);
   const dirty =
     JSON.stringify(values) !== baseline ||
@@ -483,10 +512,11 @@ function ProjectForm({ project }) {
   }
   async function submit(event) {
     event.preventDefault();
+    if (!validation.validate(event.currentTarget)) return;
     await task.run(saveDraft);
   }
   async function uploadFile() {
-    if (!formRef.current.reportValidity()) return;
+    if (!validation.validate(formRef.current)) return;
     await task.run(async () => {
       const error = archiveError(file);
       if (error) throw new Error(error);
@@ -501,7 +531,7 @@ function ProjectForm({ project }) {
     });
   }
   async function publish() {
-    if (!formRef.current.reportValidity()) return;
+    if (!validation.validate(formRef.current)) return;
     const result = await task.run(async () => {
       if (!upload) throw new Error("Upload the source ZIP before publishing.");
       const draft = await saveDraft();
@@ -527,7 +557,7 @@ function ProjectForm({ project }) {
     setScreenshotError(null);
   }
   async function uploadImage() {
-    if (!formRef.current.reportValidity()) return;
+    if (!validation.validate(formRef.current)) return;
     await task.run(async () => {
       const error = imageError(imageFile);
       if (error) throw new Error(error);
@@ -556,7 +586,14 @@ function ProjectForm({ project }) {
       >
         A clear preview, useful source, and terms buyers can understand.
       </PageTitle>
-      <form ref={formRef} className="app-form app-card" onSubmit={submit}>
+      <form
+        ref={formRef}
+        noValidate
+        className="app-form app-card"
+        onSubmit={submit}
+        onInput={validation.onInput}
+      >
+        <FormValidationError validation={validation} />
         <TaskError error={task.error} />
         {saved && <Notice tone="success">Draft saved.</Notice>}
         {search.get("job") && (
@@ -575,6 +612,7 @@ function ProjectForm({ project }) {
         </Field>
         <Field label="Description">
           <textarea
+            className="resize-none"
             disabled={task.busy}
             required
             rows={5}
@@ -743,6 +781,7 @@ function ProjectForm({ project }) {
         </fieldset>
         <Field label="License terms">
           <textarea
+            className="resize-none"
             disabled={task.busy}
             required
             rows={4}
@@ -847,9 +886,11 @@ function ReleaseForm({ project }) {
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
   const task = useTask();
+  const validation = useFormValidation();
   useDirtyGuard(Boolean(version || notes || file) && !done);
   async function submit(event) {
     event.preventDefault();
+    if (!validation.validate(event.currentTarget)) return;
     const result = await task.run(async () => {
       const error = archiveError(file);
       if (error) throw new Error(error);
@@ -875,7 +916,13 @@ function ReleaseForm({ project }) {
       <PageTitle title={`A new release for ${project.title}`}>
         Existing buyers receive updates under this listing without buying again.
       </PageTitle>
-      <form className="app-form app-card" onSubmit={submit}>
+      <form
+        noValidate
+        className="app-form app-card"
+        onSubmit={submit}
+        onInput={validation.onInput}
+      >
+        <FormValidationError validation={validation} />
         <TaskError error={task.error} />
         <Field label="Version" hint="Use a unique version, for example 1.1.0.">
           <input
@@ -888,6 +935,7 @@ function ReleaseForm({ project }) {
         </Field>
         <Field label="Release notes">
           <textarea
+            className="resize-none"
             disabled={task.busy}
             required
             rows={5}
@@ -1315,6 +1363,7 @@ function EntitlementDetail({ entitlement, reload }) {
   const [resalePrice, setResalePrice] = useState("");
   const [offer, setOffer] = useState(null);
   const task = useTask();
+  const validation = useFormValidation();
   const active = !["transferred", "revoked", "expired", "inactive"].includes(
     entitlement.status,
   );
@@ -1327,6 +1376,7 @@ function EntitlementDetail({ entitlement, reload }) {
   }
   async function resale(event) {
     event.preventDefault();
+    if (!validation.validate(event.currentTarget)) return;
     const result = await task.run(() =>
       service.call("resales.create", {
         entitlementId: entitlement.id,
@@ -1424,7 +1474,13 @@ function EntitlementDetail({ entitlement, reload }) {
                 </Link>
               </>
             ) : (
-              <form className="app-form" onSubmit={resale}>
+              <form
+                noValidate
+                className="app-form"
+                onSubmit={resale}
+                onInput={validation.onInput}
+              >
+                <FormValidationError validation={validation} />
                 <h3>Resell your license</h3>
                 <p className="app-muted">
                   The transferred license and its future updates move to the

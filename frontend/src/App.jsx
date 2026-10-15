@@ -73,7 +73,8 @@ function Header() {
           {user ? (
             <>
               <Link className="app-account" to="/settings/profile">
-                {user.name}
+                {user.name ||
+                  `${user.address?.slice(0, 6) || "Wallet"}…${user.address?.slice(-4) || ""}`}
               </Link>
               <button
                 className="app-signout"
@@ -101,16 +102,16 @@ function Header() {
     </>
   );
 }
-function ModeBanner() {
-  const { mode } = useApp();
-  return (
-    <div className={`app-mode-banner ${mode === "demo" ? "demo" : ""}`}>
-      {mode === "demo"
-        ? "Demo mode · Sample projects and simulated activity. No real purchases or Gemini generation."
-        : "API mode · Fuji testnet · test AVAX only"}
-    </div>
-  );
-}
+// function ModeBanner() {
+//   const { mode } = useApp();
+//   return (
+//     <div className={`app-mode-banner ${mode === "demo" ? "demo" : ""}`}>
+//       {mode === "demo"
+//         ? "Demo mode · Sample projects and simulated activity. No real purchases or Gemini generation."
+//         : "API mode · Fuji testnet · test AVAX only"}
+//     </div>
+//   );
+// }
 function RouteFocus() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -147,7 +148,7 @@ function Root() {
         </a>
       )}
       <RouteFocus />
-      <ModeBanner />
+      {/* <ModeBanner /> */}
       <Outlet />
     </AppProvider>
   );
