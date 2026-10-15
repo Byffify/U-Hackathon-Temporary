@@ -7,3 +7,11 @@ artifacts/
 
 frontend/test-results/
 frontend/playwright-report/
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+*.pyc
+*.db
+*.egg-info/
+utopia.db

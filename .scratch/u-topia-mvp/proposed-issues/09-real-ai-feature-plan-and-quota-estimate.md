@@ -22,7 +22,7 @@
 
 ## External prerequisites
 
-ผู้ใช้พักการเลือก model provider ไว้ Ticket นี้จึงมี external blocker สำหรับ real integration จนกว่าจะมีเอกสาร/API และ configuration ที่ยืนยันแล้ว ต้องเลือก quota conversion จากต้นทุน provider โดยไม่ใช้ Tokenomist data API แทน code-generation model
+ผู้ใช้เลือก Google Gemini API เมื่อ 15 ตุลาคม 2026 ให้ Python Backend เรียกผ่าน `google-genai` เก็บ `GEMINI_API_KEY` ฝั่ง server และตั้งรุ่นผ่าน `GEMINI_MODEL` ก่อน real integration ยังต้องเลือกรุ่นโมเดล เตรียม credentials ตรวจ rate limits และกำหนด quota conversion จาก usage/ต้นทุนจริง การเลือก provider ไม่ได้แปลว่า integration ผ่านแล้ว
 
 ## Verification evidence
 

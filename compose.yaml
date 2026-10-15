@@ -1,0 +1,33 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: utopia
+      POSTGRES_PASSWORD: local-dev-only
+      POSTGRES_DB: utopia
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U utopia -d utopia"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  migrate:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://utopia:local-dev-only@db:5432/utopia
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+  api:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://utopia:local-dev-only@db:5432/utopia
+    ports:
+      - "8000:8000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+volumes:
+  postgres_data:

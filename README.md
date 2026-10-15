@@ -2,6 +2,8 @@
 
 Connected marketplace frontend built with React, JavaScript, Vite and React Router. English interface with the existing editorial landing and a responsive product workspace.
 
+Python Backend foundation is now in [`backend/`](backend/README.md): FastAPI wallet-signature login, persistent sessions, public/own profiles, SQL migrations, HTTP tests, Docker and Railway configuration. Frontend integration and marketplace/Gemini/contract services are not connected yet. See the backend README for local commands and exact delivery limits.
+
 ## Run
 
 Node.js 22.12+ required. From `frontend/`:
@@ -27,6 +29,7 @@ Use `VITE_SERVICE_MODE=api` and `VITE_API_BASE_URL=/api/v1` to connect the backe
 ## Pages
 
 Landing; Explore/search/filter; project details and public creators; wallet authentication; profile settings; creator project drafts, screenshots, ZIP publishing and releases; purchase confirmation/recovery; Library, downloads and updates; license resale; Gemini conversations, source context, quota review, explicit generation confirmation and output history; 404 and recovery states.
+Not connected to the frontend: backend authentication, source encryption/IPFS uploads, payment contracts and gas sponsorship, source downloads, and AI generation. The backend authentication API exists separately; the current frontend wallet connection still requests an address only and does not authenticate a server session. Example projects are illustrative, not purchasable listings.
 
 Gemini replaces U-Bot, supports one or many authorized source releases, and creates ZIPs only through the connected backend after explicit confirmation. See docs/adr/0011-gemini-conversations-and-single-project-work.md.
 
