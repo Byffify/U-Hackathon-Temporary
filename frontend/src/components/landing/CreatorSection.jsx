@@ -1,5 +1,5 @@
 import CreatorShowcase from "./CreatorShowcase.jsx";
-export default function CreatorSection({ actions }) {
+export default function CreatorSection() {
   return (
     <section
       className="section container creator-section"
@@ -21,23 +21,13 @@ export default function CreatorSection({ actions }) {
           and take the next step when it clicks.
         </p>
       </div>
-      <CreatorShowcase
-        onProject={actions.openProject}
-        onFees={actions.openFees}
-      />
+      <CreatorShowcase />
       <div className="creator-bottom">
         <p>
           Your work tells the story.
           <br />
           <strong>Give it somewhere to go.</strong>
         </p>
-        <button
-          className="text-button"
-          type="button"
-          onClick={() => actions.openStart("profile")}
-        >
-          Start creating <span aria-hidden="true">↗</span>
-        </button>
       </div>
     </section>
   );

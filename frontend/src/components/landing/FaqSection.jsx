@@ -1,5 +1,5 @@
 import Faq from "./Faq.jsx";
-export default function FaqSection({ actions }) {
+export default function FaqSection() {
   return (
     <section
       className="section container faq-section"

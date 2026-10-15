@@ -12,14 +12,19 @@
   color: var(--color-ink);
 }
 .app-header {
+  min-height: 86px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-page);
+}
+.app-header-inner {
+  width: min(calc(100% - 80px), 1440px);
+  min-height: 86px;
+  margin-inline: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  min-height: 86px;
-  padding: 16px 40px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-page);
+  padding-block: 16px;
 }
 .app-header .brand svg,
 .app-footer .brand svg {
@@ -44,9 +49,6 @@
 }
 .app-header nav a.active {
   color: var(--color-ink);
-  text-decoration: underline;
-  text-underline-offset: 8px;
-  text-decoration-color: var(--color-lime-deep);
 }
 .app-signout {
   border: 0;
@@ -72,6 +74,7 @@
   padding: 56px 40px 80px;
   min-height: 70vh;
 }
+#main:focus,
 .app-public:focus,
 .app-workspace-main:focus {
   outline: none;
@@ -630,8 +633,8 @@ textarea:focus-visible {
   .app-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .app-header {
-    padding-inline: 24px;
+  .app-header-inner {
+    width: calc(100% - 48px);
     gap: 16px;
   }
   .app-header nav {
@@ -661,9 +664,10 @@ textarea:focus-visible {
   .app-list-prose dd {
     margin-top: var(--space-sm);
   }
-  .app-header {
+  .app-header-inner {
+    width: calc(100% - 40px);
     flex-wrap: wrap;
-    padding: 16px 20px;
+    padding-block: 16px;
     gap: 16px;
   }
   .app-header .brand {

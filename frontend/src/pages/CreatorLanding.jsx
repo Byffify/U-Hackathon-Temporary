@@ -7,7 +7,6 @@ import FeatureShowcase from "../components/landing/FeatureShowcase.jsx";
 import UbotSection from "../components/landing/UbotSection.jsx";
 import FaqSection from "../components/landing/FaqSection.jsx";
 import FinalCta from "../components/landing/FinalCta.jsx";
-import SiteHeader from "../components/layout/SiteHeader.jsx";
 import SiteFooter from "../components/layout/SiteFooter.jsx";
 import { useEffect, useRef } from "react";
 import { createLandingMotion } from "../lib/landingMotion.js";
@@ -15,7 +14,7 @@ function SlideSection({ children }) {
   return <div data-landing-slide>{children}</div>;
 }
 
-export default function CreatorLanding({ actions }) {
+export default function CreatorLanding() {
   const mainRef = useRef(null);
   useEffect(() => createLandingMotion(mainRef.current), []);
   return (
@@ -23,10 +22,9 @@ export default function CreatorLanding({ actions }) {
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <SiteHeader actions={actions} />
       <main id="main" ref={mainRef}>
         <SlideSection>
-          <Hero actions={actions} />
+          <Hero />
         </SlideSection>
 
         <SlideSection>
@@ -44,38 +42,38 @@ export default function CreatorLanding({ actions }) {
         </SlideSection>
 
         <SlideSection>
-          <CreatorSection actions={actions} />
+          <CreatorSection />
         </SlideSection>
 
         <SlideSection>
-          <PainPoints actions={actions} />
+          <PainPoints />
         </SlideSection>
 
         <SlideSection>
-          <FeeSection actions={actions} />
+          <FeeSection />
         </SlideSection>
 
         <SlideSection>
-          <HowItWorks actions={actions} />
+          <HowItWorks />
         </SlideSection>
 
         <SlideSection>
-          <FeatureShowcase actions={actions} />
+          <FeatureShowcase />
         </SlideSection>
 
         <SlideSection>
-          <UbotSection actions={actions} />
+          <UbotSection />
         </SlideSection>
 
         <SlideSection>
-          <FaqSection actions={actions} />
+          <FaqSection />
         </SlideSection>
 
         <SlideSection>
-          <FinalCta actions={actions} />
+          <FinalCta />
         </SlideSection>
       </main>
-      <SiteFooter actions={actions} />
+      <SiteFooter />
     </>
   );
 }

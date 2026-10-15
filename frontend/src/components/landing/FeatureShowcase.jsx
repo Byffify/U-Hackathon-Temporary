@@ -1,5 +1,5 @@
 import { ProfileArtwork } from "./ProjectArt.jsx";
-export default function FeatureShowcase({ actions }) {
+export default function FeatureShowcase() {
   return (
     <section
       className="section container features-section"
@@ -18,9 +18,6 @@ export default function FeatureShowcase({ actions }) {
             One profile for your projects and the person behind them. A place to
             share from your résumé, your socials, or your next introduction.
           </p>
-          <a className="text-button" href="#creators">
-            Meet the makers <span aria-hidden="true">↗</span>
-          </a>
         </div>
       </article>
       <article className="feature-row feature-reverse">

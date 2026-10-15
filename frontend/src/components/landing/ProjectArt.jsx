@@ -20,17 +20,23 @@ export function ProjectArt({ id, loading = "lazy" }) {
 export function ProjectCard({ project, onProject }) {
   return (
     <article className="project-card">
-      <button
-        className="project-preview"
-        type="button"
-        onClick={() => onProject(project.id)}
-        aria-label={`Preview ${project.title}`}
-      >
-        <ProjectArt id={project.id} />
-        <span className="preview-project-label">
-          View example <span aria-hidden="true">↗</span>
-        </span>
-      </button>
+      {onProject ? (
+        <button
+          className="project-preview"
+          type="button"
+          onClick={() => onProject(project.id)}
+          aria-label={`Preview ${project.title}`}
+        >
+          <ProjectArt id={project.id} />
+          <span className="preview-project-label">
+            View example <span aria-hidden="true">↗</span>
+          </span>
+        </button>
+      ) : (
+        <div className="project-preview">
+          <ProjectArt id={project.id} />
+        </div>
+      )}
       <div className="project-meta">
         <div>
           <h4>{project.title}</h4>

@@ -1,4 +1,4 @@
-export default function FeeSection({ actions }) {
+export default function FeeSection() {
   return (
     <section
       className="section container fee-section"
@@ -18,16 +18,6 @@ export default function FeeSection({ actions }) {
             <br />
             No puzzle. No upstream royalties.
           </p>
-          <button
-            className="text-button"
-            type="button"
-            onClick={() => actions.openFees("section")}
-          >
-            See how the fee works{" "}
-            <span className="circle-arrow" aria-hidden="true">
-              ↗
-            </span>
-          </button>
         </div>
         <div className="fee-visual">
           <div className="earnings-card">

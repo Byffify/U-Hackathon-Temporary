@@ -1,4 +1,4 @@
-export default function HowItWorks({ actions }) {
+export default function HowItWorks() {
   return (
     <section
       className="section container process-section"

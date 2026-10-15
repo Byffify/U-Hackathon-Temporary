@@ -15,10 +15,6 @@ import { ErrorState, Notice } from "./app/ui.jsx";
 import CreatorLanding from "./pages/CreatorLanding.jsx";
 import Modal from "./components/ui/Modal.jsx";
 import {
-  FeesDialog,
-  AboutDialog,
-} from "./components/dialogs/CreatorDialogs.jsx";
-import {
   ExplorePage,
   ProjectDetailPage,
   CreatorProfilePage,
@@ -59,56 +55,48 @@ function Header({ showNavigation = true }) {
   return (
     <>
       <header className="app-header">
-        <Brand />
-        {showNavigation && (
-          <nav aria-label="Main navigation">
-            <NavLink to="/explore">Explore</NavLink>
-            <NavLink to="/workspace/projects">My workspace</NavLink>
-          </nav>
-        )}
-        <div className="app-header-account">
-          {user ? (
-            <>
-              <Link className="app-account" to="/settings/profile">
-                {user.name ||
-                  `${user.address?.slice(0, 6) || "Wallet"}…${user.address?.slice(-4) || ""}`}
-              </Link>
-              <button
-                className="app-signout"
-                onClick={async () => {
-                  try {
-                    await service.call("auth.logout");
-                    await refreshSession();
-                    navigate("/");
-                  } catch (e) {
-                    setError(e);
-                  }
-                }}
-              >
-                Sign out
-              </button>
-            </>
-          ) : (
-            <Link className="app-button" to="/connect">
-              Connect wallet
-            </Link>
+        <div className="app-header-inner">
+          <Brand />
+          {showNavigation && (
+            <nav aria-label="Main navigation">
+              <NavLink to="/explore">Explore</NavLink>
+              <NavLink to="/workspace/projects">My workspace</NavLink>
+            </nav>
           )}
+          <div className="app-header-account">
+            {user ? (
+              <>
+                <Link className="app-account" to="/settings/profile">
+                  {user.name ||
+                    `${user.address?.slice(0, 6) || "Wallet"}…${user.address?.slice(-4) || ""}`}
+                </Link>
+                <button
+                  className="app-signout"
+                  onClick={async () => {
+                    try {
+                      await service.call("auth.logout");
+                      await refreshSession();
+                      navigate("/");
+                    } catch (e) {
+                      setError(e);
+                    }
+                  }}
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link className="app-button" to="/connect">
+                Connect wallet
+              </Link>
+            )}
+          </div>
         </div>
       </header>
       {error && <Notice tone="error">{error.message}</Notice>}
     </>
   );
 }
-// function ModeBanner() {
-//   const { mode } = useApp();
-//   return (
-//     <div className={`app-mode-banner ${mode === "demo" ? "demo" : ""}`}>
-//       {mode === "demo"
-//         ? "Demo mode · Sample projects and simulated activity. No real purchases or Gemini generation."
-//         : "API mode · Fuji testnet · test AVAX only"}
-//     </div>
-//   );
-// }
 function RouteFocus() {
   const { pathname } = useLocation();
   useEffect(() => {
@@ -145,7 +133,6 @@ function Root() {
         </a>
       )}
       <RouteFocus />
-      {/* <ModeBanner /> */}
       <Outlet />
     </AppProvider>
   );
@@ -274,30 +261,10 @@ function WorkspaceShell() {
   );
 }
 function LandingRoute() {
-  const navigate = useNavigate();
-  const [dialog, setDialog] = useState(null);
-  const actions = {
-    openStart: () => navigate("/workspace/projects/new"),
-    openExplore: () => navigate("/explore"),
-    openProject: (id) => navigate(`/projects/${id}`),
-    openFees: () => setDialog("fees"),
-    previewPlan: () => navigate("/gemini"),
-    openPrivacy: () => setDialog("about"),
-  };
   return (
     <>
-      <CreatorLanding actions={actions} />
-      <Modal
-        open={Boolean(dialog)}
-        contentKey={dialog || ""}
-        onClose={() => setDialog(null)}
-      >
-        {dialog === "fees" ? (
-          <FeesDialog onStart={actions.openStart} />
-        ) : dialog === "about" ? (
-          <AboutDialog />
-        ) : null}
-      </Modal>
+      <Header />
+      <CreatorLanding />
     </>
   );
 }

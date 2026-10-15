@@ -183,8 +183,6 @@ test("hero artwork follows scrolling and navigation cancels section motion", asy
   ).toBe(0);
   await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
   await page
-    .getByRole("button", { name: "Explore projects", exact: true })
-    .first()
     .click();
   await expect(page).toHaveURL(/\/explore/);
   expect(

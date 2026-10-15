@@ -1,5 +1,5 @@
 import { HeroOrbit } from "./ProjectArt.jsx";
-export default function Hero({ actions }) {
+export default function Hero() {
   return (
     <section className="hero" aria-labelledby="hero-title">
       <HeroOrbit />
@@ -41,22 +41,6 @@ export default function Hero({ actions }) {
           <br />
           Show your websites, sell the source, and keep creating.
         </p>
-        <div className="cta-row">
-          <button
-            className="button button-dark"
-            type="button"
-            onClick={() => actions.openStart("hero")}
-          >
-            Start creating <span aria-hidden="true">↗</span>
-          </button>
-          <button
-            className="button button-outline"
-            type="button"
-            onClick={() => actions.openExplore()}
-          >
-            Explore projects <span aria-hidden="true">↗</span>
-          </button>
-        </div>
         <div className="hero-footnote">
           <span className="mini-avatars" aria-hidden="true">
             <span>M</span>

@@ -60,7 +60,7 @@ function Tabs({ items, active, onChange, label, vertical = false }) {
   );
 }
 
-export default function CreatorShowcase({ onProject, onFees }) {
+export default function CreatorShowcase() {
   const query = new URLSearchParams(location.search);
   const [creatorId, setCreator] = useState(
     creators.some((c) => c.id === query.get("creator"))
@@ -173,7 +173,6 @@ export default function CreatorShowcase({ onProject, onFees }) {
                 <ProjectCard
                   key={id}
                   project={projects.find((p) => p.id === id)}
-                  onProject={onProject}
                 />
               ))}
             </div>
@@ -204,13 +203,6 @@ export default function CreatorShowcase({ onProject, onFees }) {
                 One purchase includes updates in the same listing. The platform
                 fee is 10%, including purchase gas.
               </p>
-              <button
-                className="text-button"
-                type="button"
-                onClick={() => onFees("profile")}
-              >
-                See the fee breakdown <span aria-hidden="true">↗</span>
-              </button>
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-export default function PainPoints({ actions }) {
+export default function PainPoints() {
   return (
     <section className="pain-section" aria-labelledby="pain-title">
       <div className="container pain-inner">

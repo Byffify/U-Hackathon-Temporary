@@ -1,5 +1,4 @@
-import { Link } from "react-router-dom";
-export default function UbotSection({ actions }) {
+export default function UbotSection() {
   return (
     <section
       className="section container ubot-section"
@@ -35,9 +34,6 @@ export default function UbotSection({ actions }) {
             Choose your projects, describe what you need, and review the
             proposed changes before confirming a code-generation job.
           </p>
-          <Link className="button button-dark" to="/gemini">
-            Open Gemini chat <span aria-hidden="true">↗</span>
-          </Link>
           <p className="example-note">
             Illustrative conversation. Live Gemini processing requires the
             backend.
