@@ -49,7 +49,7 @@ components:
 
 ### Creative North Star
 
-An independent developer's portfolio wall brought into a working marketplace. Follow the provided Fastwork Selling UX/UI reference's spacious editorial sequence, floating portfolio previews, interactive creator showcase, dark pain-point interlude, fee panel, and closing invitation. The memorable signature is a constellation of miniature original websites around the hero, then the same sites reappearing as selectable source features in U-Bot.
+An independent developer's portfolio wall brought into a working marketplace. Follow the provided Fastwork Selling UX/UI reference's spacious editorial sequence, floating portfolio previews, interactive creator showcase, dark pain-point interlude, fee panel, and closing invitation. The memorable signature is a constellation of miniature original websites around the hero, then the same sites reappearing as selectable source context in Gemini.
 
 ### Product context and register
 
@@ -87,7 +87,7 @@ Pill buttons, 24px cards, 32px editorial panels. Tiny browser chrome uses the sm
 - Dialogs: native `dialog.showModal()` provides modal background isolation and keyboard containment; shared controller handles Escape, backdrop close, scroll lock, and trigger focus restoration. No browser alert/confirm/prompt.
 - Project samples: all sample creators and work are explicitly illustrative. No fabricated reviews or platform usage counts. Previewing a sample is not buying it.
 - Wallet: connection requests real injected wallet account access only. Connection is not backend authentication. No payment/signing request in this landing implementation.
-- U-Bot: interactive feature/stack plan example, clearly labeled as an example. No generation, quota deduction, fake download, or model-success claim.
+- Gemini: source-aware conversations for one or many projects. Explicit current-plan confirmation precedes generation. Demo quota is illustrative; no fake ZIP or model-success claim.
 - Fee calculator: uses the agreed 90/10 split in test AVAX and says purchase gas comes from the platform share. It is an illustrative calculation, not a quote from a deployed contract.
 - Scrollbars: all page-owned scroll areas inherit a visible tokenized baseline. Forced colors retain system behavior.
 - Motion: 180–240ms feedback and one gentle hero entrance. Reduced motion disables transform animation and smooth scrolling. Content never depends on animation to be revealed.
@@ -106,3 +106,7 @@ Model A: this file's scalar frontmatter token groups are canonical. `scripts/des
 - Don't present sample portfolio data as real platform traction.
 - Don't make claims that public browser code is secret or downloaded source can be recalled.
 - Don't imply chain transactions, AI generation, or publishing are live in this frontend-only implementation.
+
+## Application surfaces (approved 2026-10-15)
+
+Extend the existing world without redesigning the landing. Public routes use the top navigation; Library, creator, profile and Gemini routes use a responsive sidebar/drawer. app/ui.jsx owns status, actions and dirty-navigation behavior; UX-CONTRACT.md records workflow ownership. Product headings use the established Manrope face; original portfolio artwork belongs to demo listings only. Live listings use supplied screenshots. Native selects are the canonical owned select behavior. All states inherit generated tokens and accessible focus. Gemini replaces U-Bot, uses one or many sources and requires explicit generation confirmation. No real AI, source downloads, publishing or payment are claimed in demo mode.

@@ -1,3 +1,5 @@
+> Update 2026-10-15: ADR-0011 supersedes the multi-project-only scope and deferred model provider. Gemini chat supports one or many projects. Historical decision follows.
+
 # ส่งมอบโค้ดและใช้ U-Bot ตามความต้องการหลังซื้อ
 
 U-topia ส่งมอบโปรเจกต์ต้นฉบับให้ผู้ซื้อเป็น ZIP และผู้ซื้อนำไปติดตั้ง รัน หรือ deploy เอง โดยแพลตฟอร์มไม่ต้อง deploy ผลงานให้ ตามข้อสรุปล่าสุด U-Bot ใช้เฉพาะงานรวมโค้ดหลายโปรเจกต์ และส่งมอบโค้ดผลลัพธ์กลับไปใช้ต่อ แทนขอบเขตเดิมที่รวมงานปรับปรุงโปรเจกต์เดี่ยวด้วย
