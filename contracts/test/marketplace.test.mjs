@@ -1,140 +1,71 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import { readFileSync, mkdirSync, mkdtempSync } from "node:fs";
-import path from "node:path";
-import ganache from "ganache";
-import solc from "solc";
-import { ethers } from "ethers";
-
-const source = readFileSync(new URL("../src/UTopiaMarketplace.sol", import.meta.url), "utf8");
-const input = {
-  language: "Solidity",
-  sources: { "UTopiaMarketplace.sol": { content: source } },
-  settings: { optimizer: { enabled: true, runs: 200 }, evmVersion: "cancun", outputSelection: { "*": { "*": ["abi", "evm.bytecode"] } } },
-};
-const output = JSON.parse(solc.compile(JSON.stringify(input), {
-  import: (name) => {
-    try { return { contents: readFileSync(path.resolve("node_modules", name), "utf8") }; }
-    catch { return { error: `Missing import ${name}` }; }
-  },
-}));
-const errors = (output.errors ?? []).filter((entry) => entry.severity === "error");
-assert.deepEqual(errors, []);
-const compiled = output.contracts["UTopiaMarketplace.sol"].UTopiaMarketplace;
-
-async function fixture() {
-  mkdirSync(".test-data", { recursive: true });
-  const dbPath = mkdtempSync(path.resolve(".test-data", "ganache-"));
-  const server = ganache.provider({ logging: { quiet: true }, chain: { chainId: 174511 }, database: { dbPath } });
-  const provider = new ethers.BrowserProvider(server);
-  const keys = Object.values(server.getInitialAccounts()).map((account) => account.secretKey);
-  const [platform, sponsor, creator, buyer, other] = keys.map((key) => new ethers.Wallet(key, provider));
-  const factory = new ethers.ContractFactory(compiled.abi, compiled.evm.bytecode.object, platform);
-  const market = await factory.deploy(platform.address, sponsor.address);
-  await market.waitForDeployment();
-  assert.equal(await market.CHAIN_ID(), 174511n);
-  const termsHash = ethers.id("license-v1");
-  const price = ethers.parseEther("1");
-  await (await market.connect(creator).createListing(price, termsHash, true, true)).wait();
-  return { provider, market, platform, sponsor, creator, buyer, other, termsHash, price };
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import ganache from 'ganache';
+import { ethers } from 'ethers';
+execFileSync(process.execPath,['scripts/compile.mjs'],{stdio:'inherit'});
+const artifact=JSON.parse(fs.readFileSync('artifacts/UTopiaMarketplace.json'));
+const fields=(pairs)=>pairs.map(([name,type])=>({name,type}));
+const primaryTypes={Purchase:fields([['listingId','uint256'],['buyer','address'],['price','uint256'],['termsHash','bytes32'],['nonce','uint256'],['deadline','uint256']])};
+const resaleTypes={ResalePurchase:fields([['tokenId','uint256'],['buyer','address'],['seller','address'],['price','uint256'],['termsHash','bytes32'],['nonce','uint256'],['deadline','uint256']])};
+async function setup(t){
+ const rpc=ganache.provider({logging:{quiet:true},chain:{chainId:43113,hardfork:'shanghai'}});t.after(()=>rpc.disconnect());
+ const provider=new ethers.BrowserProvider(rpc);provider.pollingInterval=10;
+ const wallets=Object.values(rpc.getInitialAccounts()).map(a=>new ethers.Wallet(a.secretKey,provider));
+ const signers=await Promise.all(wallets.map((_,i)=>provider.getSigner(i)));
+ const [creator,platform,sponsor,buyer,other]=signers;
+ const c=await new ethers.ContractFactory(artifact.abi,artifact.bytecode,creator).deploy(platform.address,sponsor.address);await c.waitForDeployment();
+ const domain={name:'UTopiaMarketplace',version:'1',chainId:43113,verifyingContract:await c.getAddress()};
+ const terms=ethers.id('v1');const deadline=BigInt((await provider.getBlock('latest')).timestamp+3600);
+ await(await c.createListing(101n,terms,true,false)).wait();
+ const fund=async(signer,amount=1000n)=>{await(await c.connect(signer).deposit({value:amount})).wait();};
+ const request=async(signer=buyer,overrides={})=>{const r={listingId:1n,buyer:signer.address,price:101n,termsHash:terms,nonce:await c.nonces(signer.address),deadline,...overrides};return[r,await wallets[signers.findIndex(s=>s.address===signer.address)].signTypedData(domain,primaryTypes,r)];};
+ const buy=async(signer=buyer)=>{const args=await request(signer);await(await c.connect(sponsor).buy(...args)).wait();return args;};
+ return{rpc,provider,wallets,signers,c,creator,platform,sponsor,buyer,other,domain,terms,deadline,fund,request,buy};
 }
-
-async function signPurchase({ provider, market, buyer, price, termsHash }, overrides = {}) {
-  const nonce = await market.nonces(buyer.address);
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
-  const value = { listingId: 1n, buyer: buyer.address, price, termsHash, nonce, deadline, ...overrides };
-  const domain = { name: "UTopiaMarketplace", version: "1", chainId: Number((await provider.getNetwork()).chainId), verifyingContract: await market.getAddress() };
-  const types = { Purchase: [
-    { name: "listingId", type: "uint256" }, { name: "buyer", type: "address" },
-    { name: "price", type: "uint256" }, { name: "termsHash", type: "bytes32" },
-    { name: "nonce", type: "uint256" }, { name: "deadline", type: "uint256" },
-  ] };
-  return { value, signature: await buyer.signTypedData(domain, types, value) };
-}
-
-async function signResale({ provider, market, other, buyer, termsHash }, price) {
-  const value = {
-    tokenId: 1n, buyer: other.address, seller: buyer.address, price, termsHash,
-    nonce: await market.nonces(other.address),
-    deadline: BigInt(Math.floor(Date.now() / 1000) + 3600),
-  };
-  const domain = { name: "UTopiaMarketplace", version: "1", chainId: Number((await provider.getNetwork()).chainId), verifyingContract: await market.getAddress() };
-  const types = { ResalePurchase: [
-    { name: "tokenId", type: "uint256" }, { name: "buyer", type: "address" },
-    { name: "seller", type: "address" }, { name: "price", type: "uint256" },
-    { name: "termsHash", type: "bytes32" }, { name: "nonce", type: "uint256" },
-    { name: "deadline", type: "uint256" },
-  ] };
-  return { value, signature: await other.signTypedData(domain, types, value) };
-}
-
-test("sponsor settles signed purchase using buyer deposit and credits exact 90/10", async () => {
-  const f = await fixture();
-  await (await f.market.connect(f.buyer).deposit({ value: f.price })).wait();
-  const balanceBefore = await f.provider.getBalance(f.buyer.address);
-  const { value, signature } = await signPurchase(f);
-  await (await f.market.connect(f.sponsor).buy(value, signature)).wait();
-  assert.equal(await f.provider.getBalance(f.buyer.address), balanceBefore);
-  assert.equal(await f.market.ownerOf(1), f.buyer.address);
-  assert.equal(await f.market.creditOf(f.creator.address), ethers.parseEther("0.9"));
-  assert.equal(await f.market.creditOf(f.platform.address), ethers.parseEther("0.1"));
-  assert.equal(await f.market.depositOf(f.buyer.address), 0n);
-  await assert.rejects(f.market.connect(f.sponsor).buy(value, signature));
+test('multiple buyers receive independent listing access, exact credits, and purchase gas sponsorship',async t=>{
+ const x=await setup(t);await x.fund(x.buyer);await x.fund(x.other);
+ const before=await x.provider.getBalance(x.buyer.address);await x.buy();await x.buy(x.other);
+ assert.equal(await x.c.ownerOf(1n),x.buyer.address);assert.equal(await x.c.ownerOf(2n),x.other.address);
+ assert.equal(await x.c.creditOf(x.creator.address),182n);assert.equal(await x.c.creditOf(x.platform.address),20n);
+ assert.equal(await x.c.depositOf(x.buyer.address),899n);assert.equal(await x.provider.getBalance(x.buyer.address),before);
+ assert.equal(await x.c.hasListingAccess(1n,x.other.address),true,'second entitlement must authorize listing access');
 });
-
-test("two buyers get separate rights and later listing edits preserve purchased terms", async () => {
-  const f = await fixture();
-  for (const buyer of [f.buyer, f.other]) {
-    await (await f.market.connect(buyer).deposit({ value: f.price })).wait();
-    const signed = await signPurchase({ ...f, buyer });
-    await (await f.market.connect(f.sponsor).buy(signed.value, signed.signature)).wait();
-  }
-  const nextTerms = ethers.id("license-v2");
-  await (await f.market.connect(f.creator).updateListing(1, ethers.parseEther("2"), nextTerms, false, false)).wait();
-  assert.equal(await f.market.ownerOf(1), f.buyer.address);
-  assert.equal(await f.market.ownerOf(2), f.other.address);
-  assert.equal((await f.market.entitlements(1)).termsHash, f.termsHash);
-  assert.equal((await f.market.entitlements(2)).termsHash, f.termsHash);
-  assert.equal(await f.market.hasAccess(1, f.buyer.address), true);
+test('independent holdings survive one resale and listing changes preserve bought terms',async t=>{
+ const x=await setup(t);await x.fund(x.buyer);await x.fund(x.other);await x.buy();await x.buy();
+ await(await x.c.updateListing(1n,200n,ethers.id('v2'),false,true)).wait();
+ const right=await x.c.entitlements(1n);assert.equal(right.termsHash,x.terms);assert.equal(right.allowResale,true);assert.equal(right.allowDerivativeSale,false);
+ await(await x.c.connect(x.buyer).offerResale(1n,51n,x.deadline)).wait();
+ const r={tokenId:1n,buyer:x.other.address,seller:x.buyer.address,price:51n,termsHash:x.terms,nonce:0n,deadline:x.deadline};
+ const sig=await x.wallets[4].signTypedData(x.domain,resaleTypes,r);await(await x.c.connect(x.sponsor).buyResale(r,sig)).wait();
+ assert.equal(await x.c.ownerOf(1n),x.other.address);assert.equal(await x.c.ownerOf(2n),x.buyer.address);
+ assert.equal(await x.c.hasListingAccess(1n,x.buyer.address),true);assert.equal(await x.c.hasListingAccess(1n,x.other.address),true);
+ assert.equal(await x.c.entitlementCount(1n,x.buyer.address),1n);assert.equal(await x.c.creditOf(x.buyer.address),46n);
+ assert.equal(await x.c.creditOf(x.platform.address),25n);assert.equal((await x.c.resaleOffers(1n)).price,0n);
 });
-
-test("wrong signer, changed price and expiry cannot spend a buyer deposit", async () => {
-  const f = await fixture();
-  await (await f.market.connect(f.buyer).deposit({ value: f.price })).wait();
-  const signed = await signPurchase(f);
-  await assert.rejects(f.market.connect(f.other).buy(signed.value, signed.signature));
-  await assert.rejects(f.market.connect(f.sponsor).buy({ ...signed.value, price: 1n }, signed.signature));
-  const expired = await signPurchase(f, { deadline: 1n });
-  await assert.rejects(f.market.connect(f.sponsor).buy(expired.value, expired.signature));
-  assert.equal(await f.market.depositOf(f.buyer.address), f.price);
+test('authorization rejects price, terms, nonce, expiry, chain, contract, non-sponsor, and replay',async t=>{
+ const x=await setup(t);await x.fund(x.buyer);const valid=await x.request();
+ await assert.rejects(x.c.connect(x.other).buy(...valid));
+ for(const override of[{price:102n},{termsHash:ethers.id('bad')},{nonce:2n},{deadline:1n}])await assert.rejects(x.c.connect(x.sponsor).buy(...await x.request(x.buyer,override)));
+ for(const domain of[{...x.domain,chainId:1},{...x.domain,verifyingContract:x.other.address}]){
+ const sig=await x.wallets[3].signTypedData(domain,primaryTypes,valid[0]);await assert.rejects(x.c.connect(x.sponsor).buy(valid[0],sig));}
+ assert.equal(await x.c.depositOf(x.buyer.address),1000n);assert.equal(await x.c.nextTokenId(),1n);await x.buy();await assert.rejects(x.c.connect(x.sponsor).buy(...valid));
 });
-
-test("permitted resale transfers one entitlement and splits resale proceeds", async () => {
-  const f = await fixture();
-  await (await f.market.connect(f.buyer).deposit({ value: f.price })).wait();
-  const original = await signPurchase(f);
-  await (await f.market.connect(f.sponsor).buy(original.value, original.signature)).wait();
-  await assert.rejects(f.market.connect(f.buyer).transferFrom(f.buyer.address, f.other.address, 1));
-
-  const resalePrice = ethers.parseEther("0.5");
-  const offerDeadline = BigInt(Math.floor(Date.now() / 1000) + 7200);
-  await (await f.market.connect(f.buyer).offerResale(1, resalePrice, offerDeadline)).wait();
-  await (await f.market.connect(f.other).deposit({ value: resalePrice })).wait();
-  const signed = await signResale(f, resalePrice);
-  await (await f.market.connect(f.sponsor).buyResale(signed.value, signed.signature)).wait();
-  assert.equal(await f.market.ownerOf(1), f.other.address);
-  assert.equal(await f.market.hasAccess(1, f.buyer.address), false);
-  assert.equal(await f.market.hasAccess(1, f.other.address), true);
-  assert.equal(await f.market.creditOf(f.buyer.address), ethers.parseEther("0.45"));
-  assert.equal(await f.market.creditOf(f.platform.address), ethers.parseEther("0.15"));
-  await assert.rejects(f.market.connect(f.sponsor).buyResale(signed.value, signed.signature));
+test('atomic resale rejects unpaid/cancelled offers and transfer bypass including approved operators',async t=>{
+ const x=await setup(t);await x.fund(x.buyer);await x.buy();
+ await assert.rejects(x.c.connect(x.other).offerResale(1n,51n,x.deadline));
+ await assert.rejects(x.c.connect(x.buyer).transferFrom(x.buyer.address,x.other.address,1n));
+ await(await x.c.connect(x.buyer).approve(x.other.address,1n)).wait();await assert.rejects(x.c.connect(x.other).transferFrom(x.buyer.address,x.other.address,1n));
+ await(await x.c.connect(x.buyer).offerResale(1n,51n,x.deadline)).wait();
+ const r={tokenId:1n,buyer:x.other.address,seller:x.buyer.address,price:51n,termsHash:x.terms,nonce:0n,deadline:x.deadline};const sig=await x.wallets[4].signTypedData(x.domain,resaleTypes,r);
+ await assert.rejects(x.c.connect(x.sponsor).buyResale(r,sig));assert.equal(await x.c.ownerOf(1n),x.buyer.address);assert.equal(await x.c.nonces(x.other.address),0n);
+ await x.fund(x.other);await(await x.c.connect(x.buyer).cancelResale(1n)).wait();await assert.rejects(x.c.connect(x.sponsor).buyResale(r,sig));assert.equal(await x.c.depositOf(x.other.address),1000n);
 });
-
-test("resale remains forbidden when the original purchased terms forbid it", async () => {
-  const f = await fixture();
-  await (await f.market.connect(f.creator).updateListing(1, f.price, f.termsHash, false, false)).wait();
-  await (await f.market.connect(f.buyer).deposit({ value: f.price })).wait();
-  const signed = await signPurchase(f);
-  await (await f.market.connect(f.sponsor).buy(signed.value, signed.signature)).wait();
-  await assert.rejects(f.market.connect(f.buyer).offerResale(1, f.price, BigInt(Math.floor(Date.now() / 1000) + 3600)));
+test('recorded resale denial survives new permissions; withdrawals conserve escrow',async t=>{
+ const x=await setup(t);await(await x.c.updateListing(1n,101n,x.terms,false,false)).wait();await x.fund(x.buyer);await x.buy();
+ await(await x.c.updateListing(1n,101n,x.terms,true,true)).wait();await assert.rejects(x.c.connect(x.buyer).offerResale(1n,50n,x.deadline));
+ await assert.rejects(x.c.connect(x.other).updateListing(1n,1n,x.terms,true,true));
+ await(await x.c.connect(x.buyer).withdrawDeposit(899n)).wait();assert.equal(await x.c.depositOf(x.buyer.address),0n);
+ await(await x.c.withdrawCredit()).wait();assert.equal(await x.c.creditOf(x.creator.address),0n);assert.equal(await x.provider.getBalance(await x.c.getAddress()),10n);
 });

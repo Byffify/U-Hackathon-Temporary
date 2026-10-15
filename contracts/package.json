@@ -1,18 +1,1 @@
-{
-  "name": "u-topia-contracts",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "test": "node --test test/*.test.mjs",
-    "test:bridge": "node scripts/verify-frontend.mjs",
-    "compile": "node scripts/compile.mjs",
-    "deploy:fuji": "node scripts/deploy-fuji.mjs",
-    "deploy:nimbl": "node scripts/deploy-nimbl.mjs"
-  },
-  "devDependencies": {
-    "@openzeppelin/contracts": "^5.4.0",
-    "ethers": "^6.15.0",
-    "ganache": "^7.9.2",
-    "solc": "^0.8.30"
-  }
-}
+{"name":"utopia-contracts","version":"0.1.0","private":true,"type":"module","scripts":{"build":"node scripts/compile.mjs","compile":"node scripts/compile.mjs","test":"node --test test/*.test.mjs","deploy:fuji":"node scripts/deploy-fuji.mjs","deploy:nimbl":"node scripts/deploy-nimbl.mjs","test:bridge":"node scripts/verify-frontend.mjs"},"dependencies":{"@openzeppelin/contracts":"5.4.0","ethers":"6.15.0","ganache":"7.9.2","solc":"0.8.30"}}

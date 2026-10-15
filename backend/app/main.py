@@ -7,12 +7,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
-from app import auth, profiles
+from app import auth, commerce, gemini, intake, profiles, projects
+from app.body_limit import BodyLimitMiddleware
+from app.chain import ChainGateway
 from app.config import Settings
-from app.db import make_engine
+from app.db import Base, make_engine
 from app.errors import install_error_handlers
-from app.models import Challenge, RateBucket, Session, User
 from app.schemas import Envelope, ErrorEnvelope, HealthView
+from app.sources import SourceService
+from app.storage import Storage
 
 
 def create_app(settings: Settings | None = None, *, clock=None) -> FastAPI:
@@ -33,7 +36,11 @@ def create_app(settings: Settings | None = None, *, clock=None) -> FastAPI:
     app.state.settings = settings
     app.state.clock = clock or (lambda: int(time.time()))
     app.state.sessions = sessionmaker(engine, expire_on_commit=False)
+    app.state.storage = Storage(settings)
+    app.state.chain_gateway = ChainGateway(settings)
+    app.state.source_service = SourceService(app)
     install_error_handlers(app)
+    app.add_middleware(BodyLimitMiddleware, settings=settings)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.frontend_origins,
@@ -54,6 +61,10 @@ def create_app(settings: Settings | None = None, *, clock=None) -> FastAPI:
 
     app.include_router(auth.router)
     app.include_router(profiles.router)
+    app.include_router(projects.router)
+    app.include_router(commerce.router)
+    app.include_router(gemini.router)
+    app.include_router(intake.router)
 
     @app.get("/health/live", tags=["health"], response_model=Envelope[HealthView])
     def live():
@@ -61,8 +72,8 @@ def create_app(settings: Settings | None = None, *, clock=None) -> FastAPI:
 
     @app.get("/health/ready", tags=["health"], response_model=Envelope[HealthView])
     def ready(db: auth.DB):
-        for model in (User, Challenge, Session, RateBucket):
-            db.execute(select(model).limit(1))
+        for table in Base.metadata.sorted_tables:
+            db.execute(select(table).limit(1))
         return {"data": {"status": "ready"}}
 
     return app

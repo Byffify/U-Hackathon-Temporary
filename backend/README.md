@@ -1,6 +1,6 @@
 # U-topia Python backend
 
-Implemented delivery: wallet authentication and profiles. No runtime mock-success endpoints. Marketplace, source storage, sponsored contracts, Gemini chat and workers are subsequent deliveries in the parent plan, not working integrations in this package yet.
+Implemented API: wallet authentication/profiles, image and encrypted ZIP uploads, projects/releases/discovery, on-chain listing/purchase/library/resale adapters, and Gemini conversations/plans/quota/jobs/output/derivative drafts. External services fail closed when unconfigured; local storage is explicitly a development mode. Real Gemini/IPFS/Modal/Fuji/Railway acceptance still requires configured services and credentials. See [marketplace handoff](../docs/backend-marketplace-handoff.md).
 
 ## Local development
 
@@ -53,7 +53,7 @@ All successful responses wrap the payload in `{ "data": ... }`. Every request re
 | PATCH `/api/v1/me/profile` | Optional `name`, `bio`, `avatar_url`; update only submitted fields; requires session/Origin/CSRF |
 | GET `/api/v1/creators/{id}` | Public `{id,name,bio,avatar_url}`, no wallet/session information |
 
-Profile limits: name 1–80 characters, bio at most 2000, HTTP(S) avatar URL at most 2048 characters. `avatar_url:null` clears the image. Name/bio cannot be null; unknown fields and empty PATCH are rejected. File upload for avatars is not implemented; image URLs work.
+Profile limits: name 1–80 characters, bio at most 2000, HTTP(S) avatar URL at most 2048 characters. `avatar_url:null` clears the image. Name/bio cannot be null; unknown fields and empty PATCH are rejected. POST `/api/v1/me/avatar` accepts an actual multipart image and updates avatar_url.
 
 ### Frontend login sequence
 
@@ -90,6 +90,6 @@ Deploying is a separate operation; no Railway service has been created from this
 5. Disable serverless sleep if the demo must remain warm, and monitor actual trial credit usage. Trial credit is not an uptime guarantee or unlimited free hosting.
 6. Auth rate limit defaults to 30 requests/minute per ASGI client peer across challenge and verify. Counters live in SQL, shared by workers/restarts. Configure forwarded-client handling only for a verified trusted proxy path; never blindly trust arbitrary X-Forwarded-For. Without trusted proxy configuration, users behind the same proxy may share a limit. Adjust the demo budget intentionally, not by trusting user-supplied IP headers.
 
-## Not yet delivered
+## External acceptance still pending
 
-Projects/uploads/IPFS/key custody, commerce/Solidity/gas sponsorship, library/resale, Gemini chat/plans/quota/workers and sandbox output generation remain subsequent plan deliveries. No Gemini API key is needed for this identity package, and this package does not claim AI output or on-chain verification. Production PostgreSQL execution and the Docker image must be checked against running infrastructure before deployment acceptance.
+No cloud services have been provisioned or deployed by this implementation. Configure IPFS/Supabase, Fuji contract/sponsor, Gemini Free Tier and optional Modal before enabling their flows. Tests distinguish local disk, controlled provider fixtures and real local-EVM integration from external integration. Production PostgreSQL execution and the Linux Docker image remain to be verified. Avatar binary uploads now exist at POST `/api/v1/me/avatar`; source ZIP upload is POST `/api/v1/projects/{id}/releases`.

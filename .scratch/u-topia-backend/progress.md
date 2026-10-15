@@ -18,3 +18,15 @@ Plan: docs/superpowers/plans/2026-10-15-backend-for-frontend.md
 - Reviewer: independently inspected delivery A; confirmed fixes above and non-ASCII CSRF comparison. No remaining high-confidence important findings. Its test execution was blocked by sandbox temp-directory access, not an independent pass.
 - Final verification: 42 tests passed; Ruff check/format, dependency check, Compose config parse passed. Actual local migrations and live Uvicorn /health/live + /health/ready + /openapi.json HTTP smoke passed.
 - Delivered identity foundation. Remaining acceptance: actual PostgreSQL/Docker/Railway/FE integration. Parent-plan B–H remain unimplemented; avatar binary upload belongs to storage delivery, current image field supports URL only.
+
+## Expanded delivery — 16 October 2026
+
+- User requested original marketplace scope and explicitly separated Python auth/accounts/sessions from Solidity rights/purchases; accepted plan remains the implementation basis.
+- Git now exists on main with user changes; work continued in place without discarding changes or pushing/committing. Corrected the invalid ENVIRONMENT=ENVIRONMENT example while expanding configuration.
+- Reused the team's existing numeric-ID ERC-721/EIP-712 ABI. Preserved token hasAccess and added hasListingAccess; multiple independent holdings work.
+- User reconfirmed Avalanche Fuji (43113), not historical NIMBL.
+- Added modules, migrations 0002–0005, bundled ABI, dependencies and refreshed OpenAPI. External services fail closed when unconfigured.
+- Delegated contract/commerce/Gemini tasks hit usage limits; parent completed missing worker/source integration, tests and self-review. No independent final expanded-delivery review.
+- RED missing source APIs → GREEN encrypted upload/download/idempotency/traversal checks. Further tests caught canonical path collisions and derivative parent/child transaction ordering.
+- RED Solidity independent holdings/listing access → GREEN with token API preserved and listing counts added.
+- Final verified: 73 backend tests with real disposable local EVM; 5 Solidity scenario groups; Ruff/dependency checks. No cloud deployment. Pending checks in docs/verification/backend-marketplace.md.

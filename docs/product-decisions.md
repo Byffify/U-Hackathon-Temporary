@@ -45,6 +45,8 @@
 
 ## Pending details
 
+Implementation update 16 October 2026: the user reconfirmed Avalanche Fuji (43113). The Python/backend versus Solidity responsibility split is recorded in `backend-marketplace-handoff.md`. Gemini uses Free Tier for the demo with no automatic paid fallback. Native escrow setup gas and single-relayer limitations are explicit implementation limits; full external acceptance is still pending.
+
 - ต้องเตรียม Gemini API credentials เลือกรุ่นโมเดล และตรวจ rate limits/ราคา/เงื่อนไขการใช้ข้อมูลของ tier ที่จะใช้งาน
 - จำนวนโควตาและสูตรคิดต้นทุนต้องอิงโมเดลที่เลือก รวมถึงกติกาคิดโควตาช่วงวิเคราะห์ งานล้มเหลว และวันสิ้นสุดช่วงทดลอง
 - วิธีนำเข้า open source และการตรวจเงื่อนไขที่เข้ากันได้ยังต้องออกแบบตาม flow ต้นฉบับของผู้ใช้

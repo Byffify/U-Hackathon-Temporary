@@ -158,7 +158,6 @@ contract UTopiaMarketplace is ERC721, EIP712, ReentrancyGuard {
         Listing memory listing = listings[request.listingId];
         if (listing.creator == address(0) || listing.creator == request.buyer) revert InvalidPurchase();
         if (listing.price != request.price || listing.termsHash != request.termsHash) revert InvalidPurchase();
-        if (entitlementCount[request.listingId][request.buyer] != 0) revert InvalidPurchase();
         bytes32 structHash = keccak256(abi.encode(
             PURCHASE_TYPEHASH, request.listingId, request.buyer, request.price,
             request.termsHash, request.nonce, request.deadline
@@ -183,6 +182,11 @@ contract UTopiaMarketplace is ERC721, EIP712, ReentrancyGuard {
 
     function hasAccess(uint256 tokenId, address account) external view returns (bool) {
         return account != address(0) && _ownerOf(tokenId) == account;
+    }
+
+    /// @notice Listing-level access is independent of the individual entitlement token ID.
+    function hasListingAccess(uint256 listingId, address account) external view returns (bool) {
+        return account != address(0) && entitlementCount[listingId][account] > 0;
     }
 
     function offerResale(uint256 tokenId, uint256 price, uint256 deadline) external onlyDeploymentChain {
@@ -212,7 +216,6 @@ contract UTopiaMarketplace is ERC721, EIP712, ReentrancyGuard {
         if (!right.allowResale || right.termsHash != request.termsHash) revert InvalidPurchase();
         if (offer.price == 0 || offer.price != request.price || offer.deadline < block.timestamp) revert InvalidPurchase();
         if (request.deadline > offer.deadline) revert InvalidPurchase();
-        if (entitlementCount[right.listingId][request.buyer] != 0) revert InvalidPurchase();
         bytes32 structHash = keccak256(abi.encode(
             RESALE_TYPEHASH, request.tokenId, request.buyer, request.seller,
             request.price, request.termsHash, request.nonce, request.deadline

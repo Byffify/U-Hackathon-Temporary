@@ -1,5 +1,13 @@
 # U-topia contracts
 
+**Active target, reconfirmed 16 October 2026: Avalanche Fuji (43113), test AVAX.** Use `npm run build` then `npm run deploy:fuji`, supplying FUJI_RPC_URL, DEPLOYER_PRIVATE_KEY, PLATFORM_ADDRESS and SPONSOR_ADDRESS through environment variables. No public deployment was performed in this session. The NIMBL instructions below are historical, not the selected target.
+
+Python owns login/account/session; Solidity owns native escrow/EIP-712 purchases and ERC-721 entitlements. `hasAccess(tokenId,holder)` stays token-level; new `hasListingAccess(listingId,holder)` supports independent holdings. Deposit setup and credit withdrawals still require their own gas; only purchase settlement is sponsored. See [backend handoff](../docs/backend-marketplace-handoff.md).
+
+After ABI changes export the compiled ABI to `backend/app/contract_abi.json`. For real local-EVM integration, `node scripts/local-test-chain.mjs` starts disposable chain 43113 on port 18545 and writes git-ignored `.local/test-chain.json`; run backend tests with LOCAL_EVM_TEST=1. Never use disposable local fixture keys on public networks. The historical frontend bridge script is not the Fuji backend acceptance test.
+
+## Historical NIMBL notes
+
 `src/UTopiaMarketplace.sol` เป็น Solidity contract สำหรับเครือข่ายทดสอบ NIMBL (chain ID 174511) โดยใช้ NIMBL เป็น native gas และสกุลเงินซื้อขาย พร้อม access token แบบ ERC-721 หนึ่ง token ต่อสิทธิ์ที่ซื้อ ตัวสัญญาบันทึก chain ID ณ เวลา deploy และผูก EIP-712 กับ chain นั้น
 
 ## ขอบเขตบนเชน
