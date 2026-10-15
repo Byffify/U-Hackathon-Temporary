@@ -1,102 +1,18 @@
 import { projects } from "../../data/creatorExamples.js";
 
-export function ProjectArt({ id }) {
-  if (id === "flora")
-    return (
-      <div className="project-art art-flora">
-        <div className="mock-nav">
-          <b>
-            flora<span>✳</span>
-          </b>
-          <span>Plants &nbsp; Our story &nbsp; Bag (0)</span>
-        </div>
-        <div className="flora-heading">
-          A little green.
-          <br />A little more life.
-        </div>
-        <div className="flora-bottom">
-          <span className="mini-shop-pill">Find your plant ↗</span>
-          <div className="plant plant-a">
-            <i />
-            <i />
-            <i />
-            <i />
-            <span />
-          </div>
-          <div className="plant plant-b">
-            <i />
-            <i />
-            <i />
-            <i />
-            <span />
-          </div>
-        </div>
-        <span className="art-caption">GOOD THINGS GROW HERE.</span>
-      </div>
-    );
-  if (id === "orbit")
-    return (
-      <div className="project-art art-orbit">
-        <div className="orbit-sidebar">
-          <b>o.</b>
-          <i />
-          <i />
-          <i />
-          <i />
-        </div>
-        <div className="orbit-main">
-          <div className="mock-nav">
-            <b>Your overview</b>
-            <span>↗</span>
-          </div>
-          <span className="mock-muted">A little more clarity.</span>
-          <div className="mock-metrics">
-            <div>
-              <small>Overview</small>
-              <b>Keep growing.</b>
-            </div>
-            <span className="orbit-symbol">✳</span>
-          </div>
-          <div className="chart-bars">
-            {[30, 50, 40, 70, 55, 80, 64, 96, 79, 112, 103, 130].map((h, i) => (
-              <i
-                key={i}
-                style={{ "--bar-height": `${h}px` }}
-                className={i > 7 ? "bar-emphasis" : ""}
-              />
-            ))}
-          </div>
-          <div className="chart-axis">
-            <span>MON</span>
-            <span>WED</span>
-            <span>FRI</span>
-            <span>SUN</span>
-          </div>
-        </div>
-      </div>
-    );
+export function ProjectArt({ id, loading = "lazy" }) {
+  const project = projects.find((item) => item.id === id);
+  if (!project) return null;
   return (
-    <div className="project-art art-folio">
-      <div className="mock-nav">
-        <b>aria / studio</b>
-        <span>WORK &nbsp; ABOUT &nbsp; ↗</span>
-      </div>
-      <div className="folio-heading">
-        Good ideas.
-        <br />
-        <span>Real things.</span>
-      </div>
-      <div className="folio-flower" aria-hidden="true">
-        ✳
-      </div>
-      <div className="folio-baseline">
-        <span>
-          INDEPENDENT CREATIVE
-          <br />
-          DEVELOPER & DESIGNER
-        </span>
-        <span>SELECTED WORK ↓</span>
-      </div>
+    <div className="project-art project-screenshot">
+      <img
+        src={`/images/projects/${id}.png`}
+        alt={`${project.title} website screenshot`}
+        width="1024"
+        height="572"
+        loading={loading}
+        decoding="async"
+      />
     </div>
   );
 }
@@ -135,21 +51,21 @@ export function HeroOrbit() {
   return (
     <div className="hero-orbit" aria-hidden="true">
       <div className="floating-project hero-flora">
-        <ProjectArt id="flora" />
+        <ProjectArt id="flora" loading="eager" />
         <div className="floating-caption">
           <span>flora / storefront</span>
           <span>React ↗</span>
         </div>
       </div>
       <div className="floating-project hero-orbit-card">
-        <ProjectArt id="orbit" />
+        <ProjectArt id="orbit" loading="eager" />
         <div className="floating-caption">
           <span>orbit / dashboard</span>
           <span>Next.js ↗</span>
         </div>
       </div>
       <div className="floating-project hero-folio">
-        <ProjectArt id="folio" />
+        <ProjectArt id="folio" loading="eager" />
         <div className="floating-caption">
           <span>studio / portfolio</span>
           <span>Vue ↗</span>

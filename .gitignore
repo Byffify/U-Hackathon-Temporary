@@ -4,6 +4,9 @@ dist/
 .env.*
 !.env.example
 artifacts/
+
+frontend/test-results/
+frontend/playwright-report/
 .venv/
 __pycache__/
 .pytest_cache/

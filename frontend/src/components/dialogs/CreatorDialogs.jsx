@@ -317,7 +317,7 @@ export function PlanDialog({ plan, onClose }) {
       <div className="preview-callout">
         <strong>Quota is checked before code generation.</strong>
         <p>
-          In the connected service, U-Bot will analyze compatibility and
+          In the connected service, Gemini will analyze compatibility and
           estimate quota. You can change features before confirming. This
           preview has no AI integration or quota estimate.
         </p>

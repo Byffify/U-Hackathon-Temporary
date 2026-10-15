@@ -1,3 +1,5 @@
+> Update 2026-10-15: ADR-0011 supersedes the multi-project-only scope and deferred model provider. Gemini chat supports one or many projects. Historical decision follows.
+
 # จำกัดโควตา U-Bot เฉพาะงานรวมหลายโปรเจกต์
 
 รุ่นแรกให้แพลตฟอร์มรับต้นทุน API ของ U-Bot โดยจำกัดโควตาและหักตามปริมาณใช้งาน และยังไม่เพิ่มระบบขายเครดิต ตามข้อสรุปล่าสุด โควตานี้ใช้เฉพาะผู้ที่เรียก U-Bot เพื่อรวมหลายโปรเจกต์ ไม่แจกเครดิตอัตโนมัติเมื่อซื้อโปรเจกต์ ซึ่งแทนข้อสรุปเดิมเรื่องเครดิตต่อการซื้อ

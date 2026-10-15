@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useId } from "react";
 
-export default function Modal({ open, contentKey, onClose, children }) {
+export default function Modal({ open, contentKey, onClose, children, label }) {
+  const id = useId();
   const ref = useRef();
   const trigger = useRef();
   useEffect(() => {
@@ -24,8 +25,9 @@ export default function Modal({ open, contentKey, onClose, children }) {
   return (
     <dialog
       ref={ref}
-      id="modal"
-      aria-labelledby="dialog-title"
+      id={id}
+      aria-label={label}
+      aria-labelledby={label ? undefined : "dialog-title"}
       onCancel={(event) => {
         event.preventDefault();
         onClose();

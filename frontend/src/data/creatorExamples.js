@@ -88,8 +88,8 @@ export const faqs = [
     "You set permission for reselling the original rights separately from selling derivative projects. When derivative sales are allowed, the new work can be sold with source. There are no upstream royalties.",
   ],
   [
-    "How does U-Bot work?",
-    "Choose features from multiple projects you have permission to use, add your own requirements, choose a stack, and review the plan before confirming. Trial quota is per account, with no daily reset or credit top-ups.",
+    "How does Gemini chat work?",
+    "Choose one or more source projects you have permission to use, discuss your requirements, choose a stack, and review the plan before confirming code generation. Trial quota is per account, with no daily reset or credit top-ups.",
   ],
   [
     "Is this using real money?",
