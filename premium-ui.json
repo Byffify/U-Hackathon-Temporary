@@ -1,0 +1,16 @@
+{
+  "profile": "marketing",
+  "sourceRoots": ["src"],
+  "locale": "en",
+  "ownership": {
+    "Select/Listbox": "native",
+    "Date": "native"
+  },
+  "requiredCommands": ["check", "unit", "build", "format"],
+  "commands": {
+    "check": "npm run check",
+    "unit": "npm test",
+    "build": "npm run build",
+    "format": "npm run format:check"
+  }
+}
