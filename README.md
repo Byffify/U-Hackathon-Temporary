@@ -1,12 +1,8 @@
 # U-topia
 
-Connected marketplace frontend built with React, JavaScript, Vite and React Router. English interface with the existing editorial landing and a responsive product workspace.
+React + JavaScript frontend, built with Vite. The creator landing page adapts `FASTWORK_SELLING_UX_UI_SPEC_TH.md` to the agreed U-topia business rules.
 
-<<<<<<< HEAD
-Python Backend is in [`backend/`](backend/README.md): FastAPI wallet-signature login, sessions/profiles, image/encrypted-source uploads, projects/releases, commerce/chain adapter and Gemini jobs. Solidity is in `contracts/`. See [integration handoff](docs/backend-marketplace-handoff.md) for endpoints, provider configuration and explicit verification limits. Frontend wiring and hosted-service acceptance are separate from local tests.
-=======
-Python Backend foundation is now in [`backend/`](backend/README.md): FastAPI wallet-signature login, persistent sessions, public/own profiles, SQL migrations, HTTP tests, Docker and Railway configuration. The active `frontend/` app has been migrated from `frontend2/` with React Router and an API adapter for backend authentication and profiles. Marketplace, Gemini and contract services are not connected yet. See the backend README for local commands and exact delivery limits.
->>>>>>> 490a86307f6eb762974e0720ec9f1cd606902052
+Python Backend foundation is now in [`backend/`](backend/README.md): FastAPI wallet-signature login, persistent sessions, public/own profiles, SQL migrations, HTTP tests, Docker and Railway configuration. Frontend integration and marketplace/Gemini/contract services are not connected yet. See the backend README for local commands and exact delivery limits.
 
 ## Run
 
