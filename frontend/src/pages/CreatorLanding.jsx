@@ -29,17 +29,19 @@ export default function CreatorLanding({ actions }) {
           <Hero actions={actions} />
         </SlideSection>
 
-        <div className="manifesto-strip">
-          <span>YOUR WORK, YOUR NAME.</span>
-          <span className="strip-star" aria-hidden="true">
-            ✳
-          </span>
-          <span>YOUR SOURCE, YOUR TERMS.</span>
-          <span className="strip-star" aria-hidden="true">
-            ✳
-          </span>
-          <span>SOMETHING NEW STARTS HERE.</span>
-        </div>
+        <SlideSection>
+          <div className="manifesto-strip">
+            <span>YOUR WORK, YOUR NAME.</span>
+            <span className="strip-star" aria-hidden="true">
+              ✳
+            </span>
+            <span>YOUR SOURCE, YOUR TERMS.</span>
+            <span className="strip-star" aria-hidden="true">
+              ✳
+            </span>
+            <span>SOMETHING NEW STARTS HERE.</span>
+          </div>
+        </SlideSection>
 
         <SlideSection>
           <CreatorSection actions={actions} />

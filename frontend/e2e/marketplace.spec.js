@@ -187,7 +187,7 @@ test("mobile workspace drawer supports keyboard dismissal and navigation", async
   await page.getByRole("button", { name: "Open workspace menu" }).click();
   await page
     .getByRole("dialog")
-    .getByRole("link", { name: "Gemini", exact: true })
+    .getByRole("link", { name: "AI", exact: true })
     .click();
   await expect(page).toHaveURL(/\/gemini$/);
   await expect(

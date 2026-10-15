@@ -52,7 +52,7 @@ function Brand() {
     </Link>
   );
 }
-function Header() {
+function Header({ showNavigation = true }) {
   const { user, service, refreshSession } = useApp();
   const navigate = useNavigate();
   const [error, setError] = useState(null);
@@ -60,15 +60,12 @@ function Header() {
     <>
       <header className="app-header">
         <Brand />
-        <nav aria-label="Main navigation">
-          <NavLink to="/explore">Explore</NavLink>
-          <NavLink to="/gemini">Gemini</NavLink>
-          {user ? (
-            <NavLink to="/library">My library</NavLink>
-          ) : (
-            <NavLink to="/">For creators</NavLink>
-          )}
-        </nav>
+        {showNavigation && (
+          <nav aria-label="Main navigation">
+            <NavLink to="/explore">Explore</NavLink>
+            <NavLink to="/workspace/projects">My workspace</NavLink>
+          </nav>
+        )}
         <div className="app-header-account">
           {user ? (
             <>
@@ -209,6 +206,7 @@ function Guard() {
   );
 }
 function WorkspaceShell() {
+  const { user } = useApp();
   const [menu, setMenu] = useState(false);
   const location = useLocation();
   useEffect(() => setMenu(false), [location.pathname]);
@@ -217,22 +215,33 @@ function WorkspaceShell() {
       <p className="app-sidebar-label">YOUR WORKSPACE</p>
       <NavLink to="/library">My library</NavLink>
       <NavLink to="/workspace/projects">My projects</NavLink>
-      <NavLink to="/gemini">Gemini</NavLink>
+      <NavLink to="/gemini">AI</NavLink>
       <NavLink to="/settings/profile">Profile settings</NavLink>
+      <NavLink className="app-sidebar-explore" to="/explore">
+        Explore
+      </NavLink>
       <div className="app-sidebar-note">
-        <span className="app-sidebar-mark">U</span>
-        <p>
-          A starting point for
-          <br />
-          your next good idea.
-        </p>
-        <Link to="/explore">Discover projects ↗</Link>
+        <span className="app-sidebar-mark" aria-hidden="true">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          >
+            <circle cx="12" cy="8" r="3.5" />
+            <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
+          </svg>
+        </span>
+        <span className="app-sidebar-user-name">{user?.name}</span>
       </div>
     </>
   );
   return (
     <>
-      <Header />
+      <Header showNavigation={false} />
       <div className="app-workspace">
         <aside className="app-sidebar" aria-label="Workspace navigation">
           {nav}

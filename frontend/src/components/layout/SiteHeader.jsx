@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 export default function SiteHeader({ actions }) {
   return (
     <header className="site-header">
@@ -15,13 +14,6 @@ export default function SiteHeader({ actions }) {
             u-topia<span className="brand-dot">✳</span>
           </span>
         </a>
-        <nav className="main-nav" aria-label="Main navigation">
-          <Link to="/explore">Explore</Link>
-          <a className="nav-active" href="#main" aria-current="page">
-            For creators
-          </a>
-          <a href="#how-it-works">How it works</a>
-        </nav>
         <div className="header-actions">
           <span className="network-label">
             <span className="network-dot"></span>Fuji testnet
@@ -29,9 +21,9 @@ export default function SiteHeader({ actions }) {
           <button
             className="button button-dark button-small"
             type="button"
-            onClick={() => actions.openStart("header")}
+            onClick={() => actions.openExplore()}
           >
-            Start creating <span aria-hidden="true">↗</span>
+            Explore <span aria-hidden="true">↗</span>
           </button>
         </div>
       </div>

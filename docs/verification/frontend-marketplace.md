@@ -68,3 +68,10 @@ Supersedes the component entrances above: nine landing sections now slide upward
 
 Verification: npm run check (31 tokens), npm test (25 passed), npm run test:ui (17 passed), npm run test:browser (17 passed), npm run format:check and npm run build (59 modules). Browser tests cover section entry/exit/reversal and keyboard-focus stability. Visually inspected section-slide-1440.png and section-slide-390.png under frontend/artifacts/. Scoped independent review approved; no physical-device profiling performed.
 
+
+## 2026-10-16: reference-inspired pinned panels
+
+Inspected https://u-topia.com/ in browser at mobile and1440px. Desktop reference uses sticky section layering; implemented that motion pattern using existing landing surfaces at1024px+. Panel pin offset accommodates content taller than the viewport. Native scrolling and reverse scrolling remain available. Mobile keeps bounded slides. Tab switches panels to normal flow; reduced motion removes pinning live. Resize and FAQ/content size changes recalculate offsets. Existing Flow and Design System preserved.
+
+Checks passed:25 node tests,17 UI tests,18 browser tests; npm run check, npm run format:check, npm run build. Desktop screenshot: frontend/artifacts/landing-stack-desktop.png. Browser tests cover actual sticky position and overlap progression, reversal, keyboard fallback and preference cleanup. No live backend or physical-device performance profiling performed.
+
