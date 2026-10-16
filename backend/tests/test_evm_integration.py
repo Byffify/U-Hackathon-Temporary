@@ -25,6 +25,7 @@ def test_real_chain_purchase_library_delivery_and_resale(tmp_path):
     fixture = json.loads((Path(__file__).parents[2] / ".local/test-chain.json").read_text())
     wallets = [Account.from_key(a["key"]) for a in fixture["accounts"]]
     settings = Settings(
+        _env_file=None,
         environment="test",
         database_url=f"sqlite:///{tmp_path / 'evm.db'}",
         fuji_rpc_url=fixture["rpc"],

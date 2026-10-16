@@ -368,22 +368,30 @@ test("an unauthenticated initial API session is a signed-out state", async () =>
   });
   assert.equal(await s.call("auth.session"), null);
 });
-test("Gemini API operations use chatId and allow standalone external source import", async () => {
+test("Gemini API uses conversations and requires archive evidence for external imports", async () => {
   const calls = [],
     s = createService({
       mode: "api",
       fetchImpl: async (url, options) => {
         calls.push({ url, options });
-        return { ok: true, status: 200, json: async () => ({ data: {} }) };
+        const data = url.endsWith("/messages")
+          ? []
+          : url.endsWith("/quota")
+            ? { remaining: 1000 }
+            : { id: "chat-1", sources: [], plans: [], jobs: [] };
+        return { ok: true, status: 200, json: async () => ({ data }) };
       },
     });
   await s.call("gemini.get", { chatId: "chat-1" });
-  assert.equal(calls[0].url, "/api/v1/gemini/sessions/chat-1");
-  await s.call("gemini.import", {
-    url: "https://example.com/project.zip",
-    license: "MIT",
-  });
-  assert.equal(calls[1].url, "/api/v1/gemini/import");
+  assert.equal(calls[0].url, "/api/v1/gemini/conversations/chat-1");
+  await assert.rejects(
+    s.call("gemini.import", {
+      url: "https://example.com/project.zip",
+      license: "MIT",
+    }),
+    { code: "ARCHIVE_REQUIRED" },
+  );
+  assert.equal(calls.length, 3);
 });
 test("prices use integer smallest units and creator profiles are public", async () => {
   const s = createService({ storage: memory() });

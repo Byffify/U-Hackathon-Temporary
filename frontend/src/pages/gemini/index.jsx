@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useApp } from "../../app/AppContext.jsx";
 import { externalUrl } from "../../app/navigation.js";
@@ -63,7 +63,7 @@ export function GeminiHome() {
               <li key={chat.id}>
                 <Link to={`/gemini/chats/${chat.id}`}>{chat.title}</Link>
                 <span className="app-muted">
-                  {chat.messages.length} messages
+                  {chat.messageCount ?? chat.messages.length} messages
                 </span>
               </li>
             ))}
@@ -107,6 +107,7 @@ export function GeminiChat() {
     evidence: "",
   });
   const [balance, setBalance] = useState(null);
+  const hydratedChat = useRef(null);
   useEffect(() => {
     if (!resource.data) return;
     const [loaded, sourceData] = resource.data;
@@ -116,9 +117,12 @@ export function GeminiChat() {
     setPlan(latest || null);
     setJob(currentPlanJob(loaded));
     setBalance(sourceData.quota);
-    setSelected(context?.sources || []);
-    setStack(context?.stack || "");
-    setInstruction(context?.instruction || "");
+    if (hydratedChat.current !== chatId) {
+      setSelected(context?.sources || []);
+      setStack(context?.stack || "");
+      setInstruction(context?.instruction || "");
+      hydratedChat.current = chatId;
+    }
     setQuote(null);
   }, [resource.data]);
   useEffect(() => {
@@ -132,6 +136,12 @@ export function GeminiChat() {
     }, 3000);
     return () => clearInterval(timer);
   }, [job?.id, job?.status, service]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!chat?.pendingJobs?.some((item) => item.operation !== "generate"))
+      return;
+    const timer = setInterval(() => resource.reload(), 3000);
+    return () => clearInterval(timer);
+  }, [chat?.pendingJobs?.map((item) => item.id).join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
   const sources = resource.data?.[1]?.sources || [];
   const input = { chatId, sources: selected, stack, instruction };
   const signature = (value) =>
@@ -223,6 +233,7 @@ export function GeminiChat() {
     );
     if (result) {
       setChat(result);
+      if (result.quota != null) setBalance(result.quota);
       setMessage("");
       setQuote(null);
     }
@@ -263,6 +274,18 @@ export function GeminiChat() {
         <Notice>
           Demo mode. Conversations and quota use local sample data. Gemini,
           source inspection, ZIP creation, and validation do not run.
+        </Notice>
+      )}
+      {chat.pendingJobs?.some((item) => item.operation !== "generate") && (
+        <Notice>
+          An AI task is still processing. Its status refreshes automatically;
+          avoid submitting it again.
+        </Notice>
+      )}
+      {resource.data?.[1]?.purchasedAvailable === false && mode !== "demo" && (
+        <Notice>
+          Owned source releases are available. Purchased sources cannot be
+          checked while the chain connection is unavailable.
         </Notice>
       )}
       <div className="gemini-workspace">

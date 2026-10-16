@@ -15,6 +15,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    func,
     select,
     update,
 )
@@ -307,6 +308,7 @@ def job_view(job):
             "created_at",
             "input_tokens",
             "output_tokens",
+            "sources",
         )
     }
 
@@ -323,6 +325,7 @@ def plan_view(plan):
             "target_stack",
             "content",
             "generation_budget",
+            "source_version",
             "created_at",
         )
     }
@@ -390,6 +393,60 @@ def enqueue(db, app, user, conv, operation, payload, budget, key, fingerprint, p
     return {"data": job_view(job)}
 
 
+@router.get("/gemini/sources")
+def source_catalog(request: Request, db: DB, user: Reader):
+    """List metadata only; every actual operation rechecks exact release access."""
+    from app.intake import ImportedSource
+    from app.projects import Project, Release
+
+    purchased, purchased_available = {}, False
+    settings = request.app.state.settings
+    if getattr(settings, "marketplace_contract_address", None):
+        try:
+            for right in request.app.state.chain_gateway.entitlements(user.address):
+                key = right["chain_listing_id"]
+                purchased[key] = purchased.get(key, False) or right["derivative_allowed"]
+            purchased_available = True
+        except ApiError as exc:
+            if exc.status != 503:
+                raise
+    result = []
+    for project, release in db.execute(
+        select(Project, Release)
+        .join(Release, Release.project_id == Project.id)
+        .order_by(Project.created_at, Project.id, Release.created_at, Release.id)
+    ):
+        own = project.creator_id == user.id
+        if not own and project.chain_listing_id not in purchased:
+            continue
+        result.append(
+            {
+                "project_id": project.id,
+                "release_id": release.id,
+                "title": project.title,
+                "version": release.version,
+                "stack": project.stack,
+                "derivative_allowed": own or purchased[project.chain_listing_id],
+            }
+        )
+    for imported in db.scalars(
+        select(ImportedSource).where(
+            ImportedSource.user_id == user.id, ImportedSource.verified.is_(True)
+        )
+    ):
+        result.append(
+            {
+                "project_id": f"import:{imported.id}",
+                "release_id": imported.id,
+                "title": imported.origin,
+                "version": imported.id,
+                "stack": "Imported source",
+                "derivative_allowed": True,
+            }
+        )
+    return {"data": {"sources": result, "purchased_available": purchased_available}}
+
+
 @router.post("/gemini/conversations", status_code=201)
 def create_conversation(body: ConversationInput, request: Request, db: DB, user: Writer):
     conv = Conversation(user_id=user.id, title=body.title, created_at=request.app.state.clock())
@@ -410,7 +467,17 @@ def list_conversations(db: DB, user: Reader, page: int = 1, page_size: int = 20)
         .limit(page_size)
     ).all()
     return {
-        "data": [{"id": c.id, "title": c.title, "created_at": c.created_at} for c in rows],
+        "data": [
+            {
+                "id": c.id,
+                "title": c.title,
+                "created_at": c.created_at,
+                "message_count": db.scalar(
+                    select(func.count()).select_from(Message).where(Message.conversation_id == c.id)
+                ),
+            }
+            for c in rows
+        ],
         "meta": {"page": page, "page_size": page_size},
     }
 
@@ -424,6 +491,13 @@ def get_conversation(cid: str, request: Request, db: DB, user: Reader):
     # Earlier history may include sources removed from the current conversation.
     for plan in plans:
         resolve_sources(request.app, db, user, plan.sources)
+    jobs = db.scalars(
+        select(Job)
+        .where(Job.conversation_id == cid, Job.user_id == user.id)
+        .order_by(Job.created_at, Job.id)
+    ).all()
+    for job in jobs:
+        resolve_sources(request.app, db, user, job.sources)
     return {
         "data": {
             "id": conv.id,
@@ -431,6 +505,7 @@ def get_conversation(cid: str, request: Request, db: DB, user: Reader):
             "sources": conv.sources,
             "source_version": conv.version,
             "plans": [plan_view(p) for p in plans],
+            "jobs": [job_view(j) for j in jobs],
         }
     }
 

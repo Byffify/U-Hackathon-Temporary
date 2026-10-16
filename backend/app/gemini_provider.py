@@ -12,11 +12,20 @@ class ProviderResult:
 
 
 class ProviderFailure(Exception):
-    def __init__(self, message, *, input_tokens=0, output_tokens=0, outcome_unknown=False):
+    def __init__(
+        self,
+        message,
+        *,
+        input_tokens=0,
+        output_tokens=0,
+        outcome_unknown=False,
+        code="PROVIDER_FAILED",
+    ):
         super().__init__(message)
         self.input_tokens = input_tokens
         self.output_tokens = output_tokens
         self.outcome_unknown = outcome_unknown
+        self.code = code
 
 
 class GoogleGeminiProvider:
@@ -63,7 +72,22 @@ class GoogleGeminiProvider:
                     max_output_tokens=remaining,
                 ),
             )
-        except Exception:
+        except Exception as exc:
+            if getattr(exc, "code", None) in {400, 401, 403, 404, 429}:
+                code = {
+                    400: "PROVIDER_REQUEST_REJECTED",
+                    401: "PROVIDER_ACCESS_DENIED",
+                    403: "PROVIDER_ACCESS_DENIED",
+                    404: "PROVIDER_MODEL_UNAVAILABLE",
+                    429: "PROVIDER_RATE_LIMITED",
+                }[exc.code]
+                raise ProviderFailure("Gemini rejected this request.", code=code) from None
+            if getattr(exc, "code", None) == 503:
+                raise ProviderFailure(
+                    "Gemini is temporarily unavailable.",
+                    code="PROVIDER_UNAVAILABLE",
+                    outcome_unknown=True,
+                ) from None
             # Transport failure can occur after the provider accepted a request.
             raise ProviderFailure("Gemini outcome is unknown.", outcome_unknown=True) from None
         usage = response.usage_metadata

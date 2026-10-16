@@ -165,7 +165,13 @@ def run_once(app):
             job.input_tokens, job.output_tokens = exc.input_tokens, exc.output_tokens
             job.status, job.error = (
                 "failed",
-                "PROVIDER_OUTCOME_UNKNOWN" if exc.outcome_unknown else "PROVIDER_FAILED",
+                (
+                    exc.code
+                    if exc.code != "PROVIDER_FAILED"
+                    else "PROVIDER_OUTCOME_UNKNOWN"
+                    if exc.outcome_unknown
+                    else "PROVIDER_FAILED"
+                ),
             )
             settle(db, job, unknown=exc.outcome_unknown)
             db.commit()
