@@ -108,6 +108,60 @@ test("wallet sign-in stops before verification on the wrong network or changed a
   assert.deepEqual(serviceCalls, ["auth.challenge"]);
 });
 
+test("publishing adds and switches to the configured L1 before preparing a listing", async () => {
+  const address = "0x1111111111111111111111111111111111111111";
+  const methods = [];
+  let chainId = "0x1";
+  let added = false;
+  const provider = {
+    request: async ({ method, params }) => {
+      methods.push(method);
+      if (method === "eth_chainId") return chainId;
+      if (method === "wallet_switchEthereumChain") {
+        assert.equal(params[0].chainId, "0xa0c08");
+        if (!added) throw { code: 4902 };
+        chainId = params[0].chainId;
+        return null;
+      }
+      if (method === "wallet_addEthereumChain") {
+        assert.equal(params[0].nativeCurrency.symbol, "PINEM");
+        assert.equal(params[0].chainId, "0xa0c08");
+        added = true;
+        return null;
+      }
+      if (method === "eth_requestAccounts") return [address];
+      throw new Error(`Unexpected wallet method: ${method}`);
+    },
+  };
+  await assert.rejects(
+    publishProjectWithWallet({
+      service: {
+        call: async (operation) => {
+          assert.equal(operation, "projects.chainTransaction");
+          throw new Error("Reached chain transaction preparation");
+        },
+      },
+      provider,
+      storage: { getItem: () => null },
+      address,
+      project: {
+        id: "project-1",
+        terms_hash: `0x${"cd".repeat(32)}`,
+        price_wei: "100",
+      },
+    }),
+    /Reached chain transaction preparation/,
+  );
+  assert.deepEqual(methods, [
+    "eth_chainId",
+    "wallet_switchEthereumChain",
+    "wallet_addEthereumChain",
+    "wallet_switchEthereumChain",
+    "eth_chainId",
+    "eth_requestAccounts",
+  ]);
+});
+
 test("publish creates an L1 listing and retries API publication without another transaction", async () => {
   const address = "0x1111111111111111111111111111111111111111";
   const contract = "0x2222222222222222222222222222222222222222";

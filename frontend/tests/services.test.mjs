@@ -168,16 +168,8 @@ test("API uses authenticated requests, structured errors, and never falls back t
   await assert.rejects(offline.call("projects.list"), {
     code: "NETWORK_ERROR",
   });
-  const unsafe = createService({
-    mode: "api",
-    fetchImpl: async () => ({
-      ok: true,
-      status: 200,
-      json: async () => ({ url: "javascript:alert(1)" }),
-    }),
-  });
-  await assert.rejects(unsafe.call("library.download", { id: "a" }), {
-    code: "INVALID_URL",
+  await assert.rejects(s.call("library.download", { id: "a" }), {
+    code: "INVALID_REQUEST",
   });
 });
 
@@ -320,19 +312,18 @@ test("API Explore maps published project data, media and pagination", async () =
   assert.equal(detail.license, "Use and modify");
 });
 
-test("API Explore fetches backend examples and keeps them separate from purchasable listings", async () => {
+test("API Explore fetches only published backend projects", async () => {
   const calls = [];
-  const example = {
-    id: "flora",
-    creator_id: null,
-    creator_name: "Maya Chen",
-    title: "Flora storefront",
+  const project = {
+    id: "project-1",
+    creator_id: "creator-1",
+    creator_name: "Creator",
+    title: "Published storefront",
     description: "A storefront",
     stack: "React",
     price_wei: "500000000000000000",
     license_terms: "Preview only",
-    published: false,
-    is_example: true,
+    published: true,
     images: [],
   };
   const service = createService({
@@ -343,25 +334,25 @@ test("API Explore fetches backend examples and keeps them separate from purchasa
         ok: true,
         status: 200,
         json: async () =>
-          url.includes("/flora?")
-            ? { data: example }
+          url.includes("/project-1")
+            ? { data: project }
             : {
-                data: [example],
+                data: [project],
                 meta: { page: 1, page_size: 20, total: 1, stacks: ["React"] },
               },
       };
     },
   });
-  const list = await service.call("explore.list", { q: "flora" });
-  assert.equal(calls[0], "/api/v1/projects?q=flora&include_examples=true");
-  assert.equal(list.items[0].isExample, true);
-  assert.equal(list.items[0].status, "example");
+  const list = await service.call("explore.list", { q: "storefront" });
+  assert.equal(calls[0], "/api/v1/projects?q=storefront");
+  assert.equal(list.items[0].isExample, false);
+  assert.equal(list.items[0].status, "published");
   assert.deepEqual(list.stacks, ["React"]);
   assert.equal(
-    (await service.call("explore.get", { id: "flora" })).title,
-    "Flora storefront",
+    (await service.call("explore.get", { id: "project-1" })).title,
+    "Published storefront",
   );
-  assert.equal(calls[1], "/api/v1/projects/flora?include_examples=true");
+  assert.equal(calls[1], "/api/v1/projects/project-1");
 });
 
 test("an unauthenticated initial API session is a signed-out state", async () => {
@@ -469,6 +460,28 @@ test("API project screenshot upload saves backend fields without image URLs", as
   assert.deepEqual(JSON.parse(requests[3].options.body), { demo_url: null });
 });
 
+test("API screenshot uploads resolve media URLs against the backend origin", async () => {
+  const service = createService({
+    mode: "api",
+    baseUrl: "https://backend.example.test/api/v1",
+    fetchImpl: async () => ({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        data: { id: "image-1", url: "/api/v1/media/image-1" },
+      }),
+    }),
+  });
+  const uploaded = await service.call("images.upload", {
+    projectId: "project-1",
+    file: new Blob(["image"], { type: "image/png" }),
+  });
+  assert.equal(
+    uploaded.url,
+    "https://backend.example.test/api/v1/media/image-1",
+  );
+});
+
 test("API source ZIP upload uses the backend release route and required metadata", async () => {
   const requests = [];
   const s = createService({
@@ -528,6 +541,82 @@ test("API workspace retrieves saved drafts from the creator endpoint", async () 
   assert.equal(result.total, 1);
   assert.equal(result.items[0].id, "saved-draft");
   assert.equal(result.items[0].status, "draft");
+});
+
+test("API library reads the buyer entitlement endpoint and maps project names", async () => {
+  const requests = [];
+  const s = createService({
+    mode: "api",
+    fetchImpl: async (url) => {
+      requests.push(url);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          data: [
+            {
+              id: "7",
+              project_id: "project-1",
+              project_title: "Published portfolio",
+              resale_allowed: false,
+              derivative_allowed: true,
+            },
+          ],
+        }),
+      };
+    },
+  });
+  const rights = await s.call("library.list");
+  assert.deepEqual(requests, ["/api/v1/me/entitlements"]);
+  assert.equal(rights[0].projectId, "project-1");
+  assert.equal(rights[0].title, "Published portfolio");
+  assert.equal(rights[0].derivativeAllowed, true);
+});
+
+test("API library detail loads its project and release and links to the protected ZIP", async () => {
+  const requests = [];
+  const s = createService({
+    mode: "api",
+    fetchImpl: async (url) => {
+      requests.push(url);
+      const data = url.endsWith("/entitlements/7")
+        ? {
+            id: "7",
+            project_id: "project-1",
+            project_title: "Published portfolio",
+            resale_allowed: false,
+            derivative_allowed: true,
+          }
+        : url.endsWith("/projects/project-1/releases")
+          ? [{ id: "release-1", version: "1.0.0" }]
+          : {
+              id: "project-1",
+              title: "Published portfolio",
+              description: "Portfolio source",
+              stack: "React",
+              price_wei: "100",
+              license_terms: "Use and modify",
+              published: true,
+            };
+      return { ok: true, status: 200, json: async () => ({ data }) };
+    },
+  });
+  const entitlement = await s.call("library.get", { id: "7" });
+  assert.deepEqual(requests, [
+    "/api/v1/entitlements/7",
+    "/api/v1/projects/project-1",
+    "/api/v1/projects/project-1/releases",
+  ]);
+  assert.equal(entitlement.project.title, "Published portfolio");
+  assert.equal(entitlement.project.latestReleaseId, "release-1");
+  assert.deepEqual(
+    await s.call("library.download", { id: "7", releaseId: "release-1" }),
+    {
+      url: "/api/v1/entitlements/7/releases/release-1/download",
+      filename: "source.zip",
+    },
+  );
+  assert.equal(requests.length, 3);
 });
 
 test("API publish sends the required chain listing id", async () => {

@@ -174,7 +174,9 @@ export function ConnectPage() {
               )}
             </div>
             {mode !== "demo" && (
-              <p className="app-muted">{NETWORK_NAME} · {NATIVE_TOKEN_SYMBOL}</p>
+              <p className="app-muted">
+                {NETWORK_NAME} · {NATIVE_TOKEN_SYMBOL}
+              </p>
             )}
           </>
         )}
@@ -293,6 +295,16 @@ export function WorkspacePage() {
     [service, page],
   );
   const projects = resource.data?.items || [];
+  const sections = [
+    {
+      title: "Drafts",
+      items: projects.filter((project) => project.status === "draft"),
+    },
+    {
+      title: "Published",
+      items: projects.filter((project) => project.status === "published"),
+    },
+  ];
   return (
     <>
       <PageTitle
@@ -311,30 +323,36 @@ export function WorkspacePage() {
         <ErrorState error={resource.error} retry={resource.reload} />
       ) : projects.length ? (
         <>
-          <div className="app-grid">
-            {projects.map((project) => (
-              <article className="app-card app-stack" key={project.id}>
-                <ProjectCard project={project} />
-                <span className="app-badge">{project.status}</span>
-                <div className="app-actions">
-                  <Link
-                    className="app-button secondary"
-                    to={`/workspace/projects/${project.id}/edit`}
-                  >
-                    Edit project
-                  </Link>
-                  {project.status === "published" && (
-                    <Link
-                      className="app-button secondary"
-                      to={`/workspace/projects/${project.id}/releases/new`}
-                    >
-                      Add release
-                    </Link>
-                  )}
+          {sections
+            .filter((section) => section.items.length)
+            .map((section) => (
+              <section className="app-stack" key={section.title}>
+                <h2>{section.title}</h2>
+                <div className="app-grid">
+                  {section.items.map((project) => (
+                    <article className="app-card app-stack" key={project.id}>
+                      <ProjectCard project={project} />
+                      <div className="app-actions">
+                        <Link
+                          className="app-button secondary"
+                          to={`/workspace/projects/${project.id}/edit`}
+                        >
+                          Edit project
+                        </Link>
+                        {project.status === "published" && (
+                          <Link
+                            className="app-button secondary"
+                            to={`/workspace/projects/${project.id}/releases/new`}
+                          >
+                            Add release
+                          </Link>
+                        )}
+                      </div>
+                    </article>
+                  ))}
                 </div>
-              </article>
+              </section>
             ))}
-          </div>
           {resource.data.total > resource.data.pageSize && (
             <nav className="app-actions" aria-label="Your projects pages">
               <button
@@ -400,17 +418,14 @@ export function ProjectEditorPage() {
   const { projectId, id } = useParams();
   const key = projectId || id;
   const { service, user } = useApp();
-  const resource = useResource(
-    async () => {
-      if (!key) return null;
-      const project = await service.call("projects.get", { id: key });
-      if (service.mode !== "api" || project.status === "published")
-        return project;
-      const releases = await service.call("projects.releases", { id: key });
-      return { ...project, uploadId: releases.at(-1)?.id || null };
-    },
-    [service, key],
-  );
+  const resource = useResource(async () => {
+    if (!key) return null;
+    const project = await service.call("projects.get", { id: key });
+    if (service.mode !== "api" || project.status === "published")
+      return project;
+    const releases = await service.call("projects.releases", { id: key });
+    return { ...project, uploadId: releases.at(-1)?.id || null };
+  }, [service, key]);
   if (resource.loading) return <Loading>Loading project…</Loading>;
   if (resource.error)
     return <ErrorState error={resource.error} retry={resource.reload} />;
@@ -534,10 +549,7 @@ function ProjectForm({ project }) {
       setImageUpload(result);
       const previewUrl = safeDownloadUrl(result.url);
       if (previewUrl)
-        change("screenshots", [
-          ...(values.screenshots || []),
-          previewUrl,
-        ]);
+        change("screenshots", [...(values.screenshots || []), previewUrl]);
       return result;
     });
   }
@@ -597,7 +609,10 @@ function ProjectForm({ project }) {
             onChange={(e) => change("stack", e.target.value)}
           />
         </Field>
-        <Field label="Demo URL" hint="Optional. Add a link when your demo is ready.">
+        <Field
+          label="Demo URL"
+          hint="Optional. Add a link when your demo is ready."
+        >
           <input
             disabled={task.busy}
             type="url"
@@ -613,7 +628,7 @@ function ProjectForm({ project }) {
           </p>
           <Field
             label="Upload screenshot"
-            hint="PNG, JPEG, or WebP, up to 10 MB. Demo mode records image metadata only."
+            hint="PNG, JPEG, or WebP, up to 5 MB. Demo mode records image metadata only."
           >
             <input
               disabled={task.busy}
@@ -685,7 +700,10 @@ function ProjectForm({ project }) {
             </div>
           )}
         </section>
-        <Field label={`Price in ${NATIVE_TOKEN_SYMBOL}`} hint="Up to 18 decimal places.">
+        <Field
+          label={`Price in ${NATIVE_TOKEN_SYMBOL}`}
+          hint="Up to 18 decimal places."
+        >
           <input
             disabled={task.busy}
             required
@@ -739,11 +757,7 @@ function ProjectForm({ project }) {
                 value={progress <= 1 ? progress * 100 : progress}
               />
             )}
-            {upload && (
-              <Notice tone="success">
-                Source ZIP uploaded.
-              </Notice>
-            )}
+            {upload && <Notice tone="success">Source ZIP uploaded.</Notice>}
           </section>
         )}
         <div className="app-actions">
@@ -1088,11 +1102,15 @@ export function CheckoutPage() {
           <dl className="app-list">
             <div>
               <dt>Seller receives</dt>
-              <dd>{formatAvax(split.seller)} {NATIVE_TOKEN_SYMBOL}</dd>
+              <dd>
+                {formatAvax(split.seller)} {NATIVE_TOKEN_SYMBOL}
+              </dd>
             </div>
             <div>
               <dt>Platform share (10%)</dt>
-              <dd>{formatAvax(split.platform)} {NATIVE_TOKEN_SYMBOL}</dd>
+              <dd>
+                {formatAvax(split.platform)} {NATIVE_TOKEN_SYMBOL}
+              </dd>
             </div>
             <div className="app-list-prose">
               <dt>Purchase gas</dt>

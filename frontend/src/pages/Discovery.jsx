@@ -97,7 +97,7 @@ export function ExplorePage() {
               {result.data.total}{" "}
               {result.data.total === 1 ? "project" : "projects"} to explore
             </p>
-            <span>Try the demo. Read the terms. Make it yours.</span>
+            <span>Explore published projects from creators.</span>
           </div>
           {result.data.items.length ? (
             <div className="app-grid">
@@ -273,8 +273,8 @@ export function ProjectDetailPage() {
           )}
           {!p.isExample && (
             <p className="app-muted">
-              {NETWORK_NAME}. Platform covers purchase gas. You install and deploy
-              the source yourself.
+              {NETWORK_NAME}. Platform covers purchase gas. You install and
+              deploy the source yourself.
             </p>
           )}
         </aside>

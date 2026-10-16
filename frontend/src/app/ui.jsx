@@ -109,13 +109,21 @@ export function ErrorState({ error, retry, context }) {
   );
 }
 export function ProjectVisual({ project }) {
-  const screenshot = project.screenshots?.map(externalUrl).find(Boolean);
+  const [failedUrls, setFailedUrls] = useState([]);
+  const screenshot = project.screenshots
+    ?.map(externalUrl)
+    .find((url) => url && !failedUrls.includes(url));
   if (screenshot)
     return (
       <img
         className="app-project-image"
         src={screenshot}
         alt={`${project.title} preview`}
+        onError={() =>
+          setFailedUrls((current) =>
+            current.includes(screenshot) ? current : [...current, screenshot],
+          )
+        }
       />
     );
   return ["flora", "orbit", "folio"].includes(project.id) ? (
@@ -142,11 +150,13 @@ export function ProjectCard({ project }) {
           <span className="app-badge">{project.stack}</span>
           {project.isExample ? (
             <span className="app-price">
-              Example · {formatAvax(BigInt(project.priceUnits || "0"))} {NATIVE_TOKEN_SYMBOL}
+              Example · {formatAvax(BigInt(project.priceUnits || "0"))}{" "}
+              {NATIVE_TOKEN_SYMBOL}
             </span>
           ) : (
             <span className="app-price">
-              {formatAvax(BigInt(project.priceUnits || "0"))} {NATIVE_TOKEN_SYMBOL}
+              {formatAvax(BigInt(project.priceUnits || "0"))}{" "}
+              {NATIVE_TOKEN_SYMBOL}
             </span>
           )}
         </div>

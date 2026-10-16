@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     auth_requests_per_minute: int = Field(default=30, ge=1, le=1000)
     storage_root: str = ".local"
+    railway_volume_mount_path: str | None = None
     storage_backend: Literal["local", "supabase"] = "local"
     source_storage_backend: Literal["local", "ipfs"] = "local"
     storage_master_key: SecretStr | None = None
