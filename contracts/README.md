@@ -1,10 +1,10 @@
 # KEEPHUB contracts
 
-**Active target, reconfirmed 16 October 2026: Avalanche Fuji (43113), test AVAX.** Use `npm run build` then `npm run deploy:fuji`, supplying FUJI_RPC_URL, DEPLOYER_PRIVATE_KEY, PLATFORM_ADDRESS and SPONSOR_ADDRESS through environment variables. No public deployment was performed in this session. The NIMBL instructions below are historical, not the selected target.
+**Active target: KEEPHUB Avalanche L1 (EVM chain ID 658440), native token PINEM.** Confirm `CHAIN_RPC_URL`, `PLATFORM_ADDRESS` and `SPONSOR_ADDRESS` in the git-ignored `.env` (copy `.env.example` if needed), then run `npm run build` and `npm run deploy:l1`. The deploy command reads `.env`; supply `DEPLOYER_PRIVATE_KEY` through the shell for that run. The deployer must hold PINEM on this L1 for gas. No public marketplace deployment was performed in this session. Fuji and NIMBL scripts below are historical targets.
 
 Python owns login/account/session; Solidity owns native escrow/EIP-712 purchases and ERC-721 entitlements. `hasAccess(tokenId,holder)` stays token-level; new `hasListingAccess(listingId,holder)` supports independent holdings. Deposit setup and credit withdrawals still require their own gas; only purchase settlement is sponsored. See [backend handoff](../docs/backend-marketplace-handoff.md).
 
-After ABI changes export the compiled ABI to `backend/app/contract_abi.json`. For real local-EVM integration, `node scripts/local-test-chain.mjs` starts disposable chain 43113 on port 18545 and writes git-ignored `.local/test-chain.json`; run backend tests with LOCAL_EVM_TEST=1. Never use disposable local fixture keys on public networks. The historical frontend bridge script is not the Fuji backend acceptance test.
+After ABI changes export the compiled ABI to `backend/app/contract_abi.json`. For local-EVM integration, `node scripts/local-test-chain.mjs` starts disposable chain 658440 on port 18545 and writes git-ignored `.local/test-chain.json`; run backend tests with LOCAL_EVM_TEST=1. Never use disposable local fixture keys on public networks. The historical frontend bridge script is not the L1 backend acceptance test.
 
 ## Historical NIMBL notes
 
@@ -44,4 +44,4 @@ npm run deploy:nimbl
 
 เครือข่ายนี้ใช้ RPC `https://nodes-prod.43.207.73.245.sslip.io/ext/bc/2BypykXr6eM22uoNFNV6fNcDHQJrN5fUQG5CjbjjQzPYZzjZXh/rpc`, chain ID 174511 และ explorer `https://2bypykxr.firn.gg` หลัง deploy ให้นำ address ไปใส่ `VITE_MARKETPLACE_ADDRESS` ใน `frontend/.env.local`
 
-สคริปต์ `deploy:fuji` ยังคงอยู่สำหรับเครือข่าย Fuji เดิม แต่ frontend ปัจจุบันอ่านเฉพาะ chain 174511
+สคริปต์ `deploy:fuji` และ `deploy:nimbl` เก็บไว้สำหรับเครือข่ายเดิม; frontend ปัจจุบันอ่านเฉพาะ chain 658440

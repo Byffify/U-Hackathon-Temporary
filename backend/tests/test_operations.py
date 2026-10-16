@@ -18,7 +18,7 @@ def test_auth_rate_limit_is_persistent_across_restarts(client, settings, clock):
             "/api/v1/auth/challenges",
             json={
                 "address": owner.address,
-                "chain_id": 43113,
+                "chain_id": 658440,
             },
         )
         assert response.status_code == 429
@@ -30,7 +30,7 @@ def test_auth_rate_limit_is_persistent_across_restarts(client, settings, clock):
                 "/api/v1/auth/challenges",
                 json={
                     "address": owner.address,
-                    "chain_id": 43113,
+                    "chain_id": 658440,
                 },
             ).status_code
             == 201

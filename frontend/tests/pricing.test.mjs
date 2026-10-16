@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { splitSale } from "../src/utils/pricing.js";
 
-test("one test AVAX sale leaves 90% for the seller and 10% for the platform", () => {
+test("one PINEM sale leaves 90% for the seller and 10% for the platform", () => {
   assert.deepEqual(splitSale("1"), {
     seller: 900000000000000000n,
     platform: 100000000000000000n,

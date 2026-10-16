@@ -600,7 +600,9 @@ export const API_ROUTES = {
   "explore.list": ["GET", "/projects"],
   "explore.get": ["GET", "/projects/:id"],
   "projects.save": ["POST", "/projects"],
-  "projects.upload": ["POST", "/projects/:projectId/uploads"],
+  "projects.chainTransaction": ["POST", "/projects/:id/chain-transaction"],
+  "projects.upload": ["POST", "/projects/:projectId/releases"],
+  "projects.releases": ["GET", "/projects/:id/releases"],
   "images.upload": ["POST", "/projects/:projectId/images"],
   "projects.publish": ["POST", "/projects/:id/publish"],
   "projects.release": ["POST", "/projects/:id/releases"],
@@ -706,6 +708,32 @@ function apiService(baseUrl, fetchImpl) {
         p.creator_id = p.creatorId;
         delete p.creatorId;
       }
+      if (operation === "projects.list" && p.mine) {
+        path = "/me/projects";
+        delete p.mine;
+        delete p.page;
+        delete p.creator_id;
+      }
+      if (operation === "projects.save") {
+        if (Array.isArray(p.stack)) p.stack = p.stack.join(", ");
+        if ("demoUrl" in p) p.demo_url = p.demoUrl || null;
+        if ("priceUnits" in p) p.price_wei = p.priceUnits;
+        if ("license" in p) p.license_terms = p.license;
+        if ("resaleAllowed" in p) p.resale_allowed = p.resaleAllowed;
+        if ("derivativeAllowed" in p)
+          p.derivative_allowed = p.derivativeAllowed;
+        delete p.demoUrl;
+        delete p.priceUnits;
+        delete p.license;
+        delete p.resaleAllowed;
+        delete p.derivativeAllowed;
+        delete p.screenshots;
+        delete p.outputRef;
+      }
+      if (operation === "projects.publish" && "chainListingId" in p) {
+        p.chain_listing_id = p.chainListingId;
+        delete p.chainListingId;
+      }
       if (operation === "projects.save" && p.id) {
         method = "PATCH";
         path = "/projects/:id";
@@ -732,6 +760,7 @@ function apiService(baseUrl, fetchImpl) {
         headers["X-CSRF-Token"] = csrfToken;
       if (payload.idempotencyKey)
         headers["Idempotency-Key"] = payload.idempotencyKey;
+      delete p.idempotencyKey;
       let url = `${root}${path}`,
         body;
       if (method === "GET") {
@@ -830,7 +859,21 @@ function apiService(baseUrl, fetchImpl) {
         throw errorFrom(data, response.status, operation);
       }
       if (operation === "projects.list" || operation === "explore.list") {
-        if (!Array.isArray(data?.data) || !data?.meta)
+        if (!Array.isArray(data?.data))
+          fail("INVALID_RESPONSE", "The API returned an invalid project list.");
+        if (operation === "projects.list" && payload.mine) {
+          const page = Math.max(1, Math.floor(Number(payload.page) || 1));
+          const pageSize = 20;
+          return {
+            items: data.data
+              .slice((page - 1) * pageSize, page * pageSize)
+              .map(projectFromApi),
+            total: data.data.length,
+            page,
+            pageSize,
+          };
+        }
+        if (!data.meta)
           fail("INVALID_RESPONSE", "The API returned an invalid project list.");
         return {
           items: data.data.map(projectFromApi),

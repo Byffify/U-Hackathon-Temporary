@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     frontend_origins: list[str] = ["http://localhost:4173", "http://127.0.0.1:4173"]
     auth_domain: str = "localhost:4173"
     auth_uri: str = "http://localhost:4173"
-    chain_id: Literal[43113] = 43113
+    chain_id: Literal[658440] = 658440
     challenge_ttl_seconds: int = Field(default=300, ge=1, le=600)
     session_ttl_seconds: int = Field(default=86400, ge=60, le=604800)
     cookie_secure: bool = False
@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     max_source_context_bytes: int = Field(default=500000, ge=1024, le=2000000)
     max_image_bytes: int = Field(default=5 * 1024 * 1024, ge=1024)
     public_api_url: str | None = None
+    chain_rpc_url: str | None = None
     fuji_rpc_url: str | None = None
     marketplace_contract_address: str | None = None
     sponsor_private_key: SecretStr | None = None

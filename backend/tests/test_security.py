@@ -95,7 +95,7 @@ def test_auth_requires_allowed_origin(client):
     response = client.post(
         "/api/v1/auth/challenges",
         headers={"Origin": "https://evil.test"},
-        json={"address": Account.create().address, "chain_id": 43113},
+        json={"address": Account.create().address, "chain_id": 658440},
     )
     assert response.status_code == 403
 
@@ -140,7 +140,7 @@ def test_secure_cookie_for_https_deployment(app, client):
         "/api/v1/auth/challenges",
         json={
             "address": owner.address,
-            "chain_id": 43113,
+            "chain_id": 658440,
         },
     )
     assert "Secure" in response.headers["set-cookie"]

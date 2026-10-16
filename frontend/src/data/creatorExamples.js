@@ -93,6 +93,6 @@ export const faqs = [
   ],
   [
     "Is this using real money?",
-    "The hackathon version is designed for Avalanche Fuji and test AVAX. This page is an interface preview: purchases, IPFS publishing, and AI generation are not connected here yet.",
+    "The hackathon version targets the KEEPHUB Avalanche L1 and PINEM. This page is an interface preview: purchases, IPFS publishing, and AI generation are not connected here yet.",
   ],
 ];

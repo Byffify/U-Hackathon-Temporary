@@ -45,7 +45,7 @@ All successful responses wrap the payload in `{ "data": ... }`. Every request re
 
 | Method/path | Input/output |
 | --- | --- |
-| POST `/api/v1/auth/challenges` | `{address, chain_id:43113}` → `{id,message,expires_at}`; sets HttpOnly browser-binding cookie |
+| POST `/api/v1/auth/challenges` | `{address, chain_id:658440}` → `{id,message,expires_at}`; sets HttpOnly browser-binding cookie |
 | POST `/api/v1/auth/verify` | `{challenge_id,signature}` → `{user:{id,address},csrf_token}`; sets HttpOnly session cookie |
 | GET `/api/v1/auth/session` | Current `{user,csrf_token}` or 401 |
 | POST `/api/v1/auth/logout` | Requires session, Origin and X-CSRF-Token; revokes session |
@@ -61,7 +61,7 @@ Profile limits: name 1–80 characters, bio at most 2000, HTTP(S) avatar URL at 
 
 ### Frontend login sequence
 
-1. Call the injected wallet's `eth_requestAccounts`, ensure Fuji chain 43113.
+1. Call the injected wallet's `eth_requestAccounts`, ensure KEEPHUB L1 chain 658440.
 2. POST `/auth/challenges` using `credentials:"include"`; sign exactly the returned message with EIP-191 `personal_sign` (UTF-8 message encoded to hex for wallets that require hex parameters).
 3. POST `/auth/verify` with the returned ID and signature, again including cookies. The browser-binding cookie from step 2 must be present.
 4. Keep `csrf_token` in memory; include it in `X-CSRF-Token` for profile mutations/logout. Recover it after refresh via GET `/auth/session`.
@@ -94,6 +94,8 @@ Deploying is a separate operation; no Railway service has been created from this
 4. Railpack installs `requirements.txt` with Python 3.12. Both `railpack.json` and `railway.toml` specify `app.main:create_app` as the API entry point on Railway's PORT. Set the service Config File to `/backend/railway.toml` so this start command applies even if the dashboard has an old custom command such as `uvicorn main:app`. The config also runs `python -m alembic upgrade head` before deployment and checks `/health/ready`; if Railway does not apply the config file, set these values in the service settings.
 5. Disable serverless sleep if the demo must remain warm, and monitor actual trial credit usage. Trial credit is not an uptime guarantee or unlimited free hosting.
 6. Auth rate limit defaults to 30 requests/minute per ASGI client peer across challenge and verify. Counters live in SQL, shared by workers/restarts. Configure forwarded-client handling only for a verified trusted proxy path; never blindly trust arbitrary X-Forwarded-For. Without trusted proxy configuration, users behind the same proxy may share a limit. Adjust the demo budget intentionally, not by trusting user-supplied IP headers.
+
+If `/api/v1/projects` returns `DATABASE_UNAVAILABLE`, check the backend service's `DATABASE_URL` reference to PostgreSQL, then run `python -m alembic current` in that service. The expected revision is `0006_explore_examples`; run `python -m alembic upgrade head` as the pre-deploy command if it is behind. Confirm `/health/ready` returns 200 before retrying Explore. After deploying this version, backend logs include the request ID, SQL exception class, and SQLSTATE without printing SQL parameters or connection details.
 
 ## External acceptance still pending
 

@@ -221,7 +221,7 @@ test("API auth and profiles follow the delivered backend contract", async () => 
     (
       await s.call("auth.challenge", {
         address: "0x1111111111111111111111111111111111111111",
-        chainId: "0xa869",
+        chainId: "0xa0c08",
       })
     ).id,
     "challenge-1",
@@ -245,7 +245,7 @@ test("API auth and profiles follow the delivered backend contract", async () => 
   assert.equal(calls[1].url, "/api/v1/auth/challenges");
   assert.deepEqual(JSON.parse(calls[1].options.body), {
     address: "0x1111111111111111111111111111111111111111",
-    chain_id: 43113,
+    chain_id: 658440,
   });
   assert.deepEqual(JSON.parse(calls[2].options.body), {
     challenge_id: "challenge-1",
@@ -414,6 +414,151 @@ test("prices use integer smallest units and creator profiles are public", async 
       .priceUnits,
     "123",
   );
+});
+
+test("API project screenshot upload saves backend fields without image URLs", async () => {
+  const requests = [];
+  const s = createService({
+    mode: "api",
+    fetchImpl: async (url, options) => {
+      requests.push({ url, options });
+      return {
+        ok: true,
+        status: 201,
+        json: async () =>
+          url.endsWith("/auth/verify")
+            ? { data: { csrf_token: "csrf", user: { id: "creator" } } }
+            : url.endsWith("/images")
+              ? { data: { id: "image-1", url: "/api/v1/media/image-1" } }
+              : { data: { id: "project-1" } },
+      };
+    },
+  });
+  await s.call("auth.verify", {
+    challengeId: "challenge",
+    signature: "signed",
+  });
+  await s.call("projects.save", {
+    title: "Demo",
+    description: "Screenshot test",
+    stack: ["React", "Vite"],
+    demoUrl: "https://example.com",
+    priceUnits: "10000000000000000",
+    license: "Personal use",
+    resaleAllowed: false,
+    derivativeAllowed: false,
+    screenshots: [],
+  });
+  assert.deepEqual(JSON.parse(requests[1].options.body), {
+    title: "Demo",
+    description: "Screenshot test",
+    stack: "React, Vite",
+    demo_url: "https://example.com",
+    price_wei: "10000000000000000",
+    license_terms: "Personal use",
+    resale_allowed: false,
+    derivative_allowed: false,
+  });
+  const file = new Blob(["image"], { type: "image/png" });
+  await s.call("images.upload", { projectId: "project-1", file });
+  assert.equal(requests[2].url, "/api/v1/projects/project-1/images");
+  assert.equal(requests[2].options.headers["X-CSRF-Token"], "csrf");
+  assert.equal(requests[2].options.body.get("file").type, "image/png");
+  assert.equal(requests[2].options.body.get("file").size, file.size);
+  await s.call("projects.save", { id: "project-1", demoUrl: "" });
+  assert.deepEqual(JSON.parse(requests[3].options.body), { demo_url: null });
+});
+
+test("API source ZIP upload uses the backend release route and required metadata", async () => {
+  const requests = [];
+  const s = createService({
+    mode: "api",
+    fetchImpl: async (url, options) => {
+      requests.push({ url, options });
+      return {
+        ok: true,
+        status: 201,
+        json: async () => ({ data: { id: "release-1", version: "1.0.0" } }),
+      };
+    },
+  });
+  const file = new Blob(["source"], { type: "application/zip" });
+  await s.call("projects.upload", {
+    projectId: "dbb58595-ac46-4eb2-9f85-e9a196c4ca48",
+    file,
+    version: "1.0.0",
+    idempotencyKey: "upload-1",
+  });
+  assert.equal(
+    requests[0].url,
+    "/api/v1/projects/dbb58595-ac46-4eb2-9f85-e9a196c4ca48/releases",
+  );
+  assert.equal(requests[0].options.body.get("version"), "1.0.0");
+  assert.equal(requests[0].options.headers["Idempotency-Key"], "upload-1");
+});
+
+test("API workspace retrieves saved drafts from the creator endpoint", async () => {
+  const requests = [];
+  const draft = {
+    id: "saved-draft",
+    creator_id: "creator-1",
+    title: "Saved project",
+    description: "Work in progress",
+    stack: "React",
+    demo_url: null,
+    price_wei: "10000000000000000",
+    license_terms: "Personal use",
+    resale_allowed: false,
+    derivative_allowed: false,
+    published: false,
+  };
+  const s = createService({
+    mode: "api",
+    fetchImpl: async (url, options) => {
+      requests.push({ url, options });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({ data: [draft] }),
+      };
+    },
+  });
+  const result = await s.call("projects.list", { mine: true, page: 1 });
+  assert.equal(requests[0].url, "/api/v1/me/projects");
+  assert.equal(result.total, 1);
+  assert.equal(result.items[0].id, "saved-draft");
+  assert.equal(result.items[0].status, "draft");
+});
+
+test("API publish sends the required chain listing id", async () => {
+  const requests = [];
+  const s = createService({
+    mode: "api",
+    fetchImpl: async (url, options) => {
+      requests.push({ url, options });
+      return {
+        ok: true,
+        status: 200,
+        json: async () =>
+          url.endsWith("/releases")
+            ? { data: [{ id: "release-1" }] }
+            : { data: {} },
+      };
+    },
+  });
+  const releases = await s.call("projects.releases", { id: "project-1" });
+  assert.equal(releases[0].id, "release-1");
+  await s.call("projects.chainTransaction", { id: "project-1" });
+  await s.call("projects.publish", {
+    id: "project-1",
+    chainListingId: "7",
+  });
+  assert.equal(requests[0].url, "/api/v1/projects/project-1/releases");
+  assert.equal(requests[1].url, "/api/v1/projects/project-1/chain-transaction");
+  assert.equal(requests[2].url, "/api/v1/projects/project-1/publish");
+  assert.deepEqual(JSON.parse(requests[2].options.body), {
+    chain_listing_id: "7",
+  });
 });
 
 test("API 401 dispatches the session-expired event", async () => {

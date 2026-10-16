@@ -23,7 +23,7 @@ it("finishes wallet login and returns to the requested page after reauthenticati
   window.ethereum = {
     request: async ({ method }) => {
       if (method === "eth_requestAccounts") return [address];
-      if (method === "eth_chainId") return "0xa869";
+      if (method === "eth_chainId") return "0xa0c08";
       if (method === "personal_sign") return signature;
       if (method === "eth_accounts") return [address];
       throw new Error(`Unexpected wallet method: ${method}`);

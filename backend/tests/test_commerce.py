@@ -14,7 +14,7 @@ def test_missing_chain_configuration_fails_closed(client):
 def test_purchase_type_uses_numeric_existing_contract_listing_id():
     from app.chain import purchase_typed_data
 
-    typed = purchase_typed_data(43113, "0x" + "12" * 20, {})
+    typed = purchase_typed_data(658440, "0x" + "12" * 20, {})
     assert typed["types"]["Purchase"][0] == {"name": "listingId", "type": "uint256"}
 
 
@@ -22,7 +22,7 @@ def test_uint256_authorization_values_are_strings_for_javascript_precision():
     from app.chain import purchase_typed_data
 
     typed = purchase_typed_data(
-        43113,
+        658440,
         "0x" + "12" * 20,
         {
             "buyer": "0x" + "34" * 20,
@@ -42,7 +42,7 @@ def test_authorization_cannot_be_replayed_for_other_buyer():
 
     wallet = Account.create()
     typed = purchase_typed_data(
-        43113,
+        658440,
         "0x" + "12" * 20,
         {
             "buyer": wallet.address,

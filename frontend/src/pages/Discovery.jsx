@@ -11,6 +11,7 @@ import {
 } from "../app/ui.jsx";
 
 import { formatAvax } from "../utils/pricing.js";
+import { NETWORK_NAME, NATIVE_TOKEN_SYMBOL } from "../lib/network.js";
 import { externalUrl } from "../app/navigation.js";
 
 export function ExplorePage() {
@@ -218,7 +219,7 @@ export function ProjectDetailPage() {
             <>
               <p className="app-large-price">
                 {formatAvax(BigInt(p.priceUnits))}
-                <small>test AVAX · example price</small>
+                <small>{NATIVE_TOKEN_SYMBOL} · example price</small>
               </p>
               <p>Preview only. Purchase is unavailable.</p>
             </>
@@ -226,7 +227,7 @@ export function ProjectDetailPage() {
             <>
               <p className="app-large-price">
                 {formatAvax(BigInt(p.priceUnits))}
-                <small>test AVAX</small>
+                <small>{NATIVE_TOKEN_SYMBOL}</small>
               </p>
               <p>Source ZIP · Updates included</p>
             </>
@@ -272,7 +273,7 @@ export function ProjectDetailPage() {
           )}
           {!p.isExample && (
             <p className="app-muted">
-              Fuji testnet. Platform covers purchase gas. You install and deploy
+              {NETWORK_NAME}. Platform covers purchase gas. You install and deploy
               the source yourself.
             </p>
           )}

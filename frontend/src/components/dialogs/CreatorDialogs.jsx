@@ -3,6 +3,7 @@ import { projects } from "../../data/creatorExamples.js";
 import { ProjectArt, ProjectCard } from "../landing/ProjectArt.jsx";
 import { splitSale, formatAvax } from "../../utils/pricing.js";
 import { connectBrowserWallet, walletErrorMessage } from "../../lib/wallet.js";
+import { NATIVE_TOKEN_SYMBOL } from "../../lib/network.js";
 
 const Arrow = () => <span aria-hidden="true">↗</span>;
 
@@ -45,7 +46,7 @@ export function StartDialog() {
     ],
     [
       "Your price and permissions",
-      "Set a test AVAX price and decide how buyers can use and build on your work.",
+      `Set a ${NATIVE_TOKEN_SYMBOL} price and decide how buyers can use and build on your work.`,
     ],
     [
       "Your wallet",
@@ -125,7 +126,7 @@ export function FeesDialog({ onStart }) {
       </p>
       <div className="fee-calculator">
         <label htmlFor="sale-price">
-          Example sale price <span>test AVAX</span>
+          Example sale price <span>{NATIVE_TOKEN_SYMBOL}</span>
         </label>
         <input
           id="sale-price"
@@ -137,15 +138,15 @@ export function FeesDialog({ onStart }) {
           onChange={(event) => setPrice(event.target.value)}
         />
         <output id="calc-total" htmlFor="sale-price">
-          {formatAvax(result.total)} test AVAX
+          {formatAvax(result.total)} {NATIVE_TOKEN_SYMBOL}
         </output>
         <div className="calculator-row">
           <span>You receive</span>
-          <strong>{formatAvax(result.seller)} test AVAX</strong>
+          <strong>{formatAvax(result.seller)} {NATIVE_TOKEN_SYMBOL}</strong>
         </div>
         <div className="calculator-row">
           <span>Platform share</span>
-          <strong>{formatAvax(result.platform)} test AVAX</strong>
+          <strong>{formatAvax(result.platform)} {NATIVE_TOKEN_SYMBOL}</strong>
         </div>
       </div>
       <div className="preview-callout">
@@ -156,7 +157,7 @@ export function FeesDialog({ onStart }) {
         </p>
       </div>
       <p className="small-text">
-        Illustrative calculation in test AVAX. No transaction is submitted and
+        Illustrative calculation in {NATIVE_TOKEN_SYMBOL}. No transaction is submitted and
         this is not a live gas estimate.
       </p>
       <button
@@ -260,7 +261,7 @@ export function ProjectDialog({ id, onExplore }) {
         <div>
           <span className="small-label">EXAMPLE PRICE</span>
           <strong>
-            {project.price} <small>test AVAX</small>
+            {project.price} <small>{NATIVE_TOKEN_SYMBOL}</small>
           </strong>
         </div>
         <span className="tag">Source ZIP + listing updates</span>
