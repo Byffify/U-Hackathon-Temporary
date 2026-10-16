@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "U-topia API",
+    "title": "KEEPHUB API",
     "version": "0.1.0"
   },
   "paths": {
@@ -851,6 +851,16 @@
               ],
               "title": "Creator Id"
             }
+          },
+          {
+            "name": "include_examples",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Examples"
+            }
           }
         ],
         "responses": {
@@ -1024,6 +1034,16 @@
             "schema": {
               "type": "string",
               "title": "Identifier"
+            }
+          },
+          {
+            "name": "include_examples",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Examples"
             }
           }
         ],

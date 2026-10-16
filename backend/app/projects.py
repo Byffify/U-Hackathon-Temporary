@@ -208,7 +208,12 @@ def list_projects(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     creator_id: str | None = None,
+    include_examples: bool = False,
 ):
+    if include_examples and creator_id is None:
+        from app.explore import list_explore
+
+        return list_explore(db=db, q=q, stack=stack, page=page, page_size=page_size)
     conditions = [Project.published.is_(True)]
     if q:
         conditions.append(
@@ -264,7 +269,13 @@ def my_projects(db: DB, user: Reader):
 
 
 @router.get("/projects/{identifier}")
-def get_project(identifier: str, request: Request, db: DB):
+def get_project(identifier: str, request: Request, db: DB, include_examples: bool = False):
+    if include_examples:
+        from app.explore import ExploreExample, example_view
+
+        example = db.get(ExploreExample, identifier)
+        if example:
+            return {"data": example_view(example)}
     project = readable_project(db, identifier, request)
     return {
         "data": {

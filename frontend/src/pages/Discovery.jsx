@@ -64,7 +64,12 @@ export function ExplorePage() {
             onChange={(e) => update("stack", e.target.value)}
           >
             <option value="">All technologies</option>
-            {["React", "Next.js", "Vue"].map((s) => (
+            {[
+              ...new Set([
+                ...(result.data?.stacks || []),
+                ...(stack ? [stack] : []),
+              ]),
+            ].map((s) => (
               <option key={s}>{s}</option>
             ))}
           </select>
@@ -184,20 +189,28 @@ export function ProjectDetailPage() {
           <section>
             <h2>About this project</h2>
             <p className="app-prose">{p.description}</p>
-            {p.isExample && <>
-              <p className="app-muted">{p.type}</p>
-              <ul>{p.features?.map((feature) => <li key={feature}>{feature}</li>)}</ul>
-            </>}
+            {p.isExample && (
+              <>
+                <p className="app-muted">{p.type}</p>
+                <ul>
+                  {p.features?.map((feature) => (
+                    <li key={feature}>{feature}</li>
+                  ))}
+                </ul>
+              </>
+            )}
           </section>
-          {!p.isExample && <section>
-            <h2>Releases</h2>
-            {p.releases?.map((r) => (
-              <div key={r.id} className="app-release">
-                <strong>{r.version}</strong>
-                <p>{r.notes || "Source project release."}</p>
-              </div>
-            ))}
-          </section>}
+          {!p.isExample && (
+            <section>
+              <h2>Releases</h2>
+              {p.releases?.map((r) => (
+                <div key={r.id} className="app-release">
+                  <strong>{r.version}</strong>
+                  <p>{r.notes || "Source project release."}</p>
+                </div>
+              ))}
+            </section>
+          )}
         </div>
         <aside className="app-card app-purchase-panel">
           <span className="app-badge">{p.stack}</span>
@@ -335,7 +348,7 @@ export function CreatorProfilePage() {
 export function NotFoundPage() {
   return (
     <Empty title="This page is still a blank canvas.">
-      <p>The address does not match a page in U-topia.</p>
+      <p>The address does not match a page in KEEPHUB.</p>
       <Link className="app-button" to="/explore">
         Explore projects
       </Link>

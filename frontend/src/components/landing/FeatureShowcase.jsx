@@ -3,7 +3,7 @@ export default function FeatureShowcase() {
   return (
     <section
       className="section container features-section"
-      aria-label="What you can do with U-topia"
+      aria-label="What you can do with KEEPHUB"
     >
       <article className="feature-row">
         <ProfileArtwork />

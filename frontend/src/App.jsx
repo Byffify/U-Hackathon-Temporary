@@ -35,15 +35,15 @@ import { GeminiHome, GeminiChat } from "./pages/gemini/index.jsx";
 import "./styles/app.css";
 function Brand() {
   return (
-    <Link className="brand" to="/" aria-label="U-topia home">
+    <Link className="brand" to="/" aria-label="KEEPHUB home">
       <svg viewBox="0 0 36 36" aria-hidden="true">
         <path
-          d="M6 6v13a12 12 0 0 0 24 0V6h-7v13a5 5 0 0 1-10 0V6Z"
+          d="M8 6v24h7v-9l8 9h9L20 17 31 6h-9l-7 8V6Z"
           fill="currentColor"
         />
       </svg>
       <span>
-        u-topia<span className="brand-dot">✳</span>
+        KEEPHUB<span className="brand-dot">✳</span>
       </span>
     </Link>
   );
@@ -101,7 +101,7 @@ function RouteFocus() {
   const { pathname } = useLocation();
   useEffect(() => {
     window.scrollTo(0, 0);
-    document.title = `${pathname === "/" ? "Websites worth building on" : pathname.split("/").filter(Boolean)[0]} · U-topia`;
+    document.title = `${pathname === "/" ? "Websites worth building on" : pathname.split("/").filter(Boolean)[0]} · KEEPHUB`;
     const focusMain = () => {
       const main = document.querySelector("main");
       if (!main?.querySelector("h1")) return false;

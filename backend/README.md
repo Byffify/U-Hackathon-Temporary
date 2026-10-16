@@ -1,4 +1,4 @@
-# U-topia Python backend
+# KEEPHUB Python backend
 
 Implemented API: wallet authentication/profiles, image and encrypted ZIP uploads, projects/releases/discovery, on-chain listing/purchase/library/resale adapters, and Gemini conversations/plans/quota/jobs/output/derivative drafts. External services fail closed when unconfigured; local storage is explicitly a development mode. Real Gemini/IPFS/Modal/Fuji/Railway acceptance still requires configured services and credentials. See [marketplace handoff](../docs/backend-marketplace-handoff.md).
 
@@ -52,8 +52,10 @@ All successful responses wrap the payload in `{ "data": ... }`. Every request re
 | GET `/api/v1/me/profile` | Current profile, authentication required |
 | PATCH `/api/v1/me/profile` | Optional `name`, `bio`, `avatar_url`; update only submitted fields; requires session/Origin/CSRF |
 | GET `/api/v1/creators/{id}` | Public `{id,name,bio,avatar_url}`, no wallet/session information |
-| GET `/api/v1/explore` | Public paginated catalog with three backend-owned examples and published listings; supports `q`, `stack`, `page`, `page_size` |
+| GET `/api/v1/explore` | Public paginated catalog with three database-backed editorial examples and published listings; supports `q`, `stack`, `page`, `page_size` |
 | GET `/api/v1/explore/{id}` | Public example or published project detail; examples carry `is_example:true` and have no purchase/source archive |
+
+`GET /api/v1/projects?include_examples=true` and `GET /api/v1/projects/{id}?include_examples=true` expose the same catalog for the Explore frontend. Without that flag, `/projects` remains limited to published purchasable listings.
 
 Profile limits: name 1–80 characters, bio at most 2000, HTTP(S) avatar URL at most 2048 characters. `avatar_url:null` clears the image. Name/bio cannot be null; unknown fields and empty PATCH are rejected. POST `/api/v1/me/avatar` accepts an actual multipart image and updates avatar_url.
 
@@ -80,6 +82,7 @@ Auth supports EOA wallets using 65-byte personal-sign signatures only. ERC-1271 
 Tests use disposable signing keys and independent SQLite files, real HTTP application boundaries, signature recovery and migrations. They do not invoke Gemini, IPFS, Fuji or a hosted database. If the desktop sandbox denies pytest's temp-directory access, run tests with the authorized terminal permissions; this is not an application failure.
 
 For local PostgreSQL, configure `DATABASE_URL` in `.env`, run the migration command above, then start the API.
+Migration `0006_explore_examples` creates and seeds the three preview rows. `sql/insert_explore_examples.sql` contains an idempotent PostgreSQL `INSERT` for manually restoring those rows after migration; it does not create purchasable listings.
 
 ## Railway configuration
 

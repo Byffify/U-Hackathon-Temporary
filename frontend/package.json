@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "U-topia creator landing page, adapted from the approved UX/UI reference.",
+  "description": "KEEPHUB creator landing page, adapted from the approved UX/UI reference.",
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 4173",
     "start": "vite --host 127.0.0.1 --port 4173",

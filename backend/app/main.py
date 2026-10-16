@@ -28,7 +28,7 @@ def create_app(settings: Settings | None = None, *, clock=None) -> FastAPI:
         engine.dispose()
 
     app = FastAPI(
-        title="U-topia API",
+        title="KEEPHUB API",
         version="0.1.0",
         lifespan=lifespan,
         responses={status: {"model": ErrorEnvelope} for status in (401, 403, 404, 422, 429, 503)},

@@ -1,4 +1,4 @@
-# U-topia contracts
+# KEEPHUB contracts
 
 **Active target, reconfirmed 16 October 2026: Avalanche Fuji (43113), test AVAX.** Use `npm run build` then `npm run deploy:fuji`, supplying FUJI_RPC_URL, DEPLOYER_PRIVATE_KEY, PLATFORM_ADDRESS and SPONSOR_ADDRESS through environment variables. No public deployment was performed in this session. The NIMBL instructions below are historical, not the selected target.
 

@@ -196,7 +196,7 @@ test("API auth and profiles follow the delivered backend contract", async () => 
             csrf_token: "csrf-1",
           }
         : url.endsWith("/auth/challenges")
-          ? { id: "challenge-1", message: "Sign in to U-topia" }
+          ? { id: "challenge-1", message: "Sign in to KEEPHUB" }
           : url.endsWith("/auth/verify")
             ? {
                 user: {
@@ -342,18 +342,26 @@ test("API Explore fetches backend examples and keeps them separate from purchasa
       return {
         ok: true,
         status: 200,
-        json: async () => url.endsWith("/flora")
-          ? { data: example }
-          : { data: [example], meta: { page: 1, page_size: 20, total: 1 } },
+        json: async () =>
+          url.includes("/flora?")
+            ? { data: example }
+            : {
+                data: [example],
+                meta: { page: 1, page_size: 20, total: 1, stacks: ["React"] },
+              },
       };
     },
   });
   const list = await service.call("explore.list", { q: "flora" });
-  assert.equal(calls[0], "/api/v1/explore?q=flora");
+  assert.equal(calls[0], "/api/v1/projects?q=flora&include_examples=true");
   assert.equal(list.items[0].isExample, true);
   assert.equal(list.items[0].status, "example");
-  assert.equal((await service.call("explore.get", { id: "flora" })).title, "Flora storefront");
-  assert.equal(calls[1], "/api/v1/explore/flora");
+  assert.deepEqual(list.stacks, ["React"]);
+  assert.equal(
+    (await service.call("explore.get", { id: "flora" })).title,
+    "Flora storefront",
+  );
+  assert.equal(calls[1], "/api/v1/projects/flora?include_examples=true");
 });
 
 test("an unauthenticated initial API session is a signed-out state", async () => {

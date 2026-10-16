@@ -120,7 +120,7 @@ export function FeesDialog({ onStart }) {
       <p className="eyebrow">ONE SIMPLE SPLIT</p>
       <h2 id="dialog-title">You keep 90%.</h2>
       <p className="dialog-intro">
-        U-topia takes 10% of the sale price and covers purchase gas from that
+        KEEPHUB takes 10% of the sale price and covers purchase gas from that
         share. There are no upstream royalties on derivative sales.
       </p>
       <div className="fee-calculator">
@@ -336,10 +336,10 @@ export function AboutDialog() {
   return (
     <>
       <p className="eyebrow">ABOUT THIS PREVIEW</p>
-      <h2 id="dialog-title">A first look at U-topia.</h2>
+      <h2 id="dialog-title">A first look at KEEPHUB.</h2>
       <p>
         This React frontend adapts the supplied creator-landing UX reference to
-        U-topia’s product rules. Creator names and projects are illustrative.
+        KEEPHUB’s product rules. Creator names and projects are illustrative.
       </p>
       <h3>What works here</h3>
       <p>

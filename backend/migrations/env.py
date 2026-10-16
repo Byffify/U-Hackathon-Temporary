@@ -1,6 +1,6 @@
 from alembic import context
 
-from app import commerce, gemini, intake, models, projects  # noqa: F401 -- registers metadata
+from app import commerce, explore, gemini, intake, models, projects  # noqa: F401 -- registers metadata
 from app.config import Settings
 from app.db import Base, make_engine
 

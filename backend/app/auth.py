@@ -128,7 +128,7 @@ def issue_challenge(body: ChallengeInput, request: Request, response: Response, 
     nonce = secrets.token_hex(16)
     message = (
         f"{settings.auth_domain} wants you to sign in with your Ethereum account:\n"
-        f"{body.address}\n\nSign in to U-topia. This does not authorize a payment.\n\n"
+        f"{body.address}\n\nSign in to KEEPHUB. This does not authorize a payment.\n\n"
         f"URI: {settings.auth_uri}\nVersion: 1\nChain ID: {settings.chain_id}\n"
         f"Nonce: {nonce}\nIssued At: {iso_time(now)}\nExpiration Time: {iso_time(expiry)}"
     )

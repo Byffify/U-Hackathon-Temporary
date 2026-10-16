@@ -18,7 +18,7 @@ const userFixtures = {
   buyer: {
     id: "buyer",
     name: "Demo Buyer",
-    bio: "Exploring and building with U-topia.",
+    bio: "Exploring and building with KEEPHUB.",
     wallet: "demo:buyer",
   },
   creator: {
@@ -182,6 +182,7 @@ function demoService(storage) {
       }
       const db = read();
       let result;
+      const isExploreList = operation === "explore.list";
       if (operation === "explore.list") operation = "projects.list";
       if (operation === "explore.get") operation = "projects.get";
       switch (operation) {
@@ -248,6 +249,17 @@ function demoService(storage) {
             total: items.length,
             page,
             pageSize,
+            ...(isExploreList
+              ? {
+                  stacks: [
+                    ...new Set(
+                      db.projects
+                        .filter((item) => item.status === "published")
+                        .flatMap((item) => item.stack),
+                    ),
+                  ].sort(),
+                }
+              : {}),
           };
         }
         case "projects.get": {
@@ -585,8 +597,8 @@ export const API_ROUTES = {
   "profiles.update": ["PATCH", "/me/profile"],
   "projects.list": ["GET", "/projects"],
   "projects.get": ["GET", "/projects/:id"],
-  "explore.list": ["GET", "/explore"],
-  "explore.get": ["GET", "/explore/:id"],
+  "explore.list": ["GET", "/projects"],
+  "explore.get": ["GET", "/projects/:id"],
   "projects.save": ["POST", "/projects"],
   "projects.upload": ["POST", "/projects/:projectId/uploads"],
   "images.upload": ["POST", "/projects/:projectId/images"],
@@ -674,6 +686,8 @@ function apiService(baseUrl, fetchImpl) {
         fail("UNKNOWN_OPERATION", `Unknown service operation: ${operation}`);
       let [method, path] = route;
       const p = { ...payload };
+      if (operation === "explore.list" || operation === "explore.get")
+        p.include_examples = true;
       if (operation === "profiles.get" && !p.id) path = "/me/profile";
       if (operation === "auth.challenge") {
         p.chain_id = Number(p.chainId);
@@ -823,6 +837,9 @@ function apiService(baseUrl, fetchImpl) {
           total: data.meta.total,
           page: data.meta.page,
           pageSize: data.meta.page_size,
+          ...(operation === "explore.list"
+            ? { stacks: data.meta.stacks ?? [] }
+            : {}),
         };
       }
       const result = data?.data ?? data;
@@ -859,7 +876,7 @@ export function createService({
   return demoService(storage);
 }
 const env = import.meta.env ?? {};
-export const mode = env.VITE_SERVICE_MODE === "api" ? "api" : "demo";
+export const mode = env.VITE_SERVICE_MODE === "demo" ? "demo" : "api";
 export const service = createService({
   mode,
   baseUrl: env.VITE_API_BASE_URL || "/api/v1",

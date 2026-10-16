@@ -1,5 +1,8 @@
 import { HeroOrbit } from "./ProjectArt.jsx";
+import { Link } from "react-router-dom";
+import { useApp } from "../../app/AppContext.jsx";
 export default function Hero() {
+  const { user } = useApp();
   return (
     <section className="hero" aria-labelledby="hero-title">
       <HeroOrbit />
@@ -41,6 +44,22 @@ export default function Hero() {
           <br />
           Show your websites, sell the source, and keep creating.
         </p>
+        <div className="cta-row">
+          <Link
+            className="button button-dark"
+            to={
+              user
+                ? "/workspace/projects"
+                : "/connect?returnTo=/workspace/projects"
+            }
+          >
+            {user ? "My workspace" : "Connect wallet"}{" "}
+            <span aria-hidden="true">↗</span>
+          </Link>
+          <Link className="button button-outline" to="/explore">
+            Explore projects <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
         <div className="hero-footnote">
           <span className="mini-avatars" aria-hidden="true">
             <span>M</span>

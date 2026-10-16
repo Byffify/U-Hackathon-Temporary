@@ -1,67 +1,46 @@
 """Public Explore catalog, including clearly marked preview projects."""
 
 from fastapi import APIRouter, Query, Request
-from sqlalchemy import func, select
+from sqlalchemy import JSON, Integer, String, Text, func, select
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.auth import DB
+from app.db import Base
 from app.models import User
 from app.projects import Media, Project, get_project, project_view
 
 router = APIRouter(prefix="/api/v1/explore", tags=["explore"])
 
-# These are editorial previews, not published listings or purchasable source archives.
-EXAMPLES = (
-    {
-        "id": "flora",
-        "title": "Flora storefront",
-        "type": "E-commerce",
-        "stack": "React",
-        "price_wei": "500000000000000000",
-        "creator_name": "Maya Chen",
-        "creator_id": None,
-        "description": (
-            "A quiet little storefront for things that grow. "
-            "Product browsing, search, and a considered cart experience."
-        ),
-        "tone": "aqua",
-        "features": ["Product search", "Shopping cart", "Product cards"],
-    },
-    {
-        "id": "orbit",
-        "title": "Orbit dashboard",
-        "type": "Dashboard",
-        "stack": "Next.js",
-        "price_wei": "800000000000000000",
-        "creator_name": "Leo Park",
-        "creator_id": None,
-        "description": (
-            "An easy-to-read workspace for the numbers that matter. "
-            "Charts, project activity, and a flexible dashboard layout."
-        ),
-        "tone": "lilac",
-        "features": ["Analytics charts", "Activity feed", "Dashboard layout"],
-    },
-    {
-        "id": "folio",
-        "title": "Studio portfolio",
-        "type": "Portfolio",
-        "stack": "Vue",
-        "price_wei": "300000000000000000",
-        "creator_name": "Aria Patel",
-        "creator_id": None,
-        "description": (
-            "An expressive home for independent work. "
-            "A project gallery, editorial case studies, and a simple contact page."
-        ),
-        "tone": "peach",
-        "features": ["Project gallery", "Case studies", "Contact page"],
-    },
-)
+
+class ExploreExample(Base):
+    """Editorial preview, separate from purchasable project listings."""
+
+    __tablename__ = "explore_examples"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    title: Mapped[str] = mapped_column(String(160))
+    type: Mapped[str] = mapped_column(String(80))
+    stack: Mapped[str] = mapped_column(String(160))
+    price_wei: Mapped[str] = mapped_column(String(78))
+    creator_name: Mapped[str] = mapped_column(String(80))
+    description: Mapped[str] = mapped_column(Text)
+    tone: Mapped[str] = mapped_column(String(32))
+    features: Mapped[list[str]] = mapped_column(JSON)
+    sort_order: Mapped[int] = mapped_column(Integer)
 
 
 def example_view(example):
     return {
-        **example,
+        "id": example.id,
+        "title": example.title,
+        "type": example.type,
+        "stack": example.stack,
+        "price_wei": example.price_wei,
+        "creator_name": example.creator_name,
+        "creator_id": None,
+        "description": example.description,
+        "tone": example.tone,
+        "features": example.features,
         "is_example": True,
         "published": False,
         "chain_listing_id": None,
@@ -94,17 +73,18 @@ def list_explore(
 ):
     needle = q.casefold()
     technology = stack.casefold()
+    all_examples = db.scalars(
+        select(ExploreExample).order_by(ExploreExample.sort_order, ExploreExample.id)
+    ).all()
     examples = [
         example
-        for example in EXAMPLES
+        for example in all_examples
         if (
             not needle
             or needle
-            in " ".join(
-                (example["title"], example["description"], example["creator_name"])
-            ).casefold()
+            in " ".join((example.title, example.description, example.creator_name)).casefold()
         )
-        and (not technology or technology in example["stack"].casefold())
+        and (not technology or technology in example.stack.casefold())
     ]
     conditions = [Project.published.is_(True)]
     if q:
@@ -115,6 +95,13 @@ def list_explore(
     if stack:
         conditions.append(Project.stack.icontains(stack, autoescape=True))
     count = db.scalar(select(func.count()).select_from(Project).where(*conditions)) or 0
+    published_stacks = db.scalars(
+        select(Project.stack).where(Project.published.is_(True)).distinct()
+    ).all()
+    stacks = sorted(
+        {item.stack for item in all_examples} | set(published_stacks),
+        key=str.casefold,
+    )
     offset = (page - 1) * page_size
     example_page = examples[offset : offset + page_size]
     remaining = page_size - len(example_page)
@@ -135,13 +122,18 @@ def list_explore(
             *(example_view(item) for item in example_page),
             *(public_project(db, item) for item in live),
         ],
-        "meta": {"page": page, "page_size": page_size, "total": len(examples) + count},
+        "meta": {
+            "page": page,
+            "page_size": page_size,
+            "total": len(examples) + count,
+            "stacks": stacks,
+        },
     }
 
 
 @router.get("/{identifier}")
 def get_explore(identifier: str, request: Request, db: DB):
-    for example in EXAMPLES:
-        if example["id"] == identifier:
-            return {"data": example_view(example)}
+    example = db.get(ExploreExample, identifier)
+    if example:
+        return {"data": example_view(example)}
     return get_project(identifier, request, db)

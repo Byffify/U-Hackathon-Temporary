@@ -1,4 +1,8 @@
+import { Link } from "react-router-dom";
+import { useApp } from "../../app/AppContext.jsx";
+
 export default function FinalCta() {
+  const { user } = useApp();
   return (
     <section className="container final-section">
       <div className="final-cta">
@@ -16,6 +20,19 @@ export default function FinalCta() {
           <br />
           Give someone else a head start.
         </p>
+        <div className="cta-row">
+          <Link
+            className="button button-lime"
+            to={
+              user
+                ? "/workspace/projects"
+                : "/connect?returnTo=/workspace/projects"
+            }
+          >
+            {user ? "My workspace" : "Connect wallet"}{" "}
+            <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
         <span className="final-loop" aria-hidden="true">
           ↝
         </span>

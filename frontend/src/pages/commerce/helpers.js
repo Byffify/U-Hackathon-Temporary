@@ -23,6 +23,10 @@ export function safeReturn(value) {
     : "/library";
 }
 export function walletError(error) {
+  if (error?.code === "CHALLENGE_INVALID")
+    return new Error(
+      "Wallet sign-in expired or its browser cookie was blocked. Refresh the page and try again.",
+    );
   return error?.code === 4001
     ? new Error(
         "The wallet request was declined. Try again when you are ready.",

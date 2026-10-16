@@ -51,6 +51,7 @@ test("sign-in return targets cannot escape the application", () => {
 
 test("wallet declines include recovery while other failures retain their identity", () => {
   assert.match(walletError({ code: 4001 }).message, /declined/);
+  assert.match(walletError({ code: "CHALLENGE_INVALID" }).message, /cookie/);
   const failure = new Error("Service unavailable");
   assert.equal(walletError(failure), failure);
 });
