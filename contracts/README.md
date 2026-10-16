@@ -1,6 +1,6 @@
 # KEEPHUB contracts
 
-**Active target: KEEPHUB Avalanche L1 (EVM chain ID 658440), native token PINEM.** Confirm `CHAIN_RPC_URL`, `PLATFORM_ADDRESS` and `SPONSOR_ADDRESS` in the git-ignored `.env` (copy `.env.example` if needed), then run `npm run build` and `npm run deploy:l1`. The deploy command reads `.env`; supply `DEPLOYER_PRIVATE_KEY` through the shell for that run. The deployer must hold PINEM on this L1 for gas. No public marketplace deployment was performed in this session. Fuji and NIMBL scripts below are historical targets.
+**Active target: KEEPHUB Avalanche L1 (EVM chain ID 658440), native token PINEM.** Confirm `CHAIN_RPC_URL`, `PLATFORM_ADDRESS` and `SPONSOR_ADDRESS` in the git-ignored `.env` (copy `.env.example` if needed), then run `npm run build` and `npm run deploy:l1`. The deploy command reads `.env` and prompts for the private key with hidden input if `DEPLOYER_PRIVATE_KEY` is absent from the shell. The deployer must hold PINEM on this L1 for gas. No public marketplace deployment was performed in this session. Fuji and NIMBL scripts below are historical targets.
 
 Python owns login/account/session; Solidity owns native escrow/EIP-712 purchases and ERC-721 entitlements. `hasAccess(tokenId,holder)` stays token-level; new `hasListingAccess(listingId,holder)` supports independent holdings. Deposit setup and credit withdrawals still require their own gas; only purchase settlement is sponsored. See [backend handoff](../docs/backend-marketplace-handoff.md).
 

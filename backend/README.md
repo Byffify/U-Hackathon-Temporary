@@ -1,6 +1,6 @@
 # KEEPHUB Python backend
 
-Implemented API: wallet authentication/profiles, image and encrypted ZIP uploads, projects/releases/discovery, on-chain listing/purchase/library/resale adapters, and Gemini conversations/plans/quota/jobs/output/derivative drafts. External services fail closed when unconfigured; local storage is explicitly a development mode. Real Gemini/IPFS/Modal/Fuji/Railway acceptance still requires configured services and credentials. See [marketplace handoff](../docs/backend-marketplace-handoff.md).
+Implemented API: wallet authentication/profiles, image and encrypted ZIP uploads, projects/releases/discovery, on-chain listing/purchase/library/resale adapters, and Gemini conversations/plans/quota/jobs/output/derivative drafts. External services fail closed when unconfigured; local storage is explicitly a development mode. Real Gemini/IPFS/Modal/L1/Railway acceptance still requires configured services and credentials. See [marketplace handoff](../docs/backend-marketplace-handoff.md).
 
 ## Local development
 
@@ -79,7 +79,7 @@ Auth supports EOA wallets using 65-byte personal-sign signatures only. ERC-1271 
 .venv/Scripts/ruff.exe format --check .
 ```
 
-Tests use disposable signing keys and independent SQLite files, real HTTP application boundaries, signature recovery and migrations. They do not invoke Gemini, IPFS, Fuji or a hosted database. If the desktop sandbox denies pytest's temp-directory access, run tests with the authorized terminal permissions; this is not an application failure.
+Tests use disposable signing keys and independent SQLite files, real HTTP application boundaries, signature recovery and migrations. They do not invoke Gemini, IPFS, the deployed L1 or a hosted database. If the desktop sandbox denies pytest's temp-directory access, run tests with the authorized terminal permissions; this is not an application failure.
 
 For local PostgreSQL, configure `DATABASE_URL` in `.env`, run the migration command above, then start the API.
 Migration `0006_explore_examples` creates and seeds the three preview rows. `sql/insert_explore_examples.sql` contains an idempotent PostgreSQL `INSERT` for manually restoring those rows after migration; it does not create purchasable listings.
@@ -99,4 +99,4 @@ If `/api/v1/projects` returns `DATABASE_UNAVAILABLE`, check the backend service'
 
 ## External acceptance still pending
 
-No cloud services have been provisioned or deployed by this implementation. Configure IPFS/Supabase, Fuji contract/sponsor, Gemini Free Tier and optional Modal before enabling their flows. Tests distinguish local disk, controlled provider fixtures and real local-EVM integration from external integration. Production PostgreSQL execution and the Railpack image remain to be verified. Avatar binary uploads now exist at POST `/api/v1/me/avatar`; source ZIP upload is POST `/api/v1/projects/{id}/releases`.
+No cloud services have been provisioned or deployed by this implementation. Configure IPFS/Supabase, L1 contract/sponsor, Gemini Free Tier and optional Modal before enabling their flows. Tests distinguish local disk, controlled provider fixtures and real local-EVM integration from external integration. Production PostgreSQL execution and the Railpack image remain to be verified. Avatar binary uploads now exist at POST `/api/v1/me/avatar`; source ZIP upload is POST `/api/v1/projects/{id}/releases`.
