@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   connectBrowserWallet,
   signInWithWallet,
+  publishProjectWithWallet,
   walletErrorMessage,
 } from "../src/lib/wallet.js";
 
@@ -42,7 +43,7 @@ test("wallet sign-in signs the exact backend challenge and verifies it", async (
     request: async (request) => {
       calls.push(request);
       if (request.method === "eth_requestAccounts") return [address];
-      if (request.method === "eth_chainId") return "0xa869";
+      if (request.method === "eth_chainId") return "0xa0c08";
       if (request.method === "personal_sign") return signature;
       if (request.method === "eth_accounts") return [address];
       throw new Error(`Unexpected wallet method: ${request.method}`);
@@ -65,7 +66,7 @@ test("wallet sign-in signs the exact backend challenge and verifies it", async (
     address,
   ]);
   assert.deepEqual(serviceCalls, [
-    { operation: "auth.challenge", payload: { address, chainId: "0xa869" } },
+    { operation: "auth.challenge", payload: { address, chainId: "0xa0c08" } },
     {
       operation: "auth.verify",
       payload: { challengeId: challenge.id, signature },
@@ -94,7 +95,7 @@ test("wallet sign-in stops before verification on the wrong network or changed a
   const changedAccount = {
     request: async ({ method }) => {
       if (method === "eth_requestAccounts") return [address];
-      if (method === "eth_chainId") return "0xa869";
+      if (method === "eth_chainId") return "0xa0c08";
       if (method === "personal_sign") return `0x${"ab".repeat(65)}`;
       if (method === "eth_accounts") return [otherAddress];
       throw new Error(`Unexpected wallet method: ${method}`);
@@ -105,4 +106,92 @@ test("wallet sign-in stops before verification on the wrong network or changed a
     /selected wallet changed/,
   );
   assert.deepEqual(serviceCalls, ["auth.challenge"]);
+});
+
+test("publish creates an L1 listing and retries API publication without another transaction", async () => {
+  const address = "0x1111111111111111111111111111111111111111";
+  const contract = "0x2222222222222222222222222222222222222222";
+  const hash = `0x${"ab".repeat(32)}`;
+  const data = new Map();
+  const storage = {
+    getItem: (key) => data.get(key) ?? null,
+    setItem: (key, value) => data.set(key, value),
+    removeItem: (key) => data.delete(key),
+  };
+  let sends = 0;
+  const provider = {
+    request: async ({ method, params }) => {
+      if (method === "eth_chainId") return "0xa0c08";
+      if (method === "eth_requestAccounts") return [address];
+      if (method === "eth_sendTransaction") {
+        sends += 1;
+        assert.equal(params[0].to, contract);
+        return hash;
+      }
+      if (method === "eth_getTransactionReceipt")
+        return {
+          status: "0x1",
+          logs: [
+            {
+              address: contract,
+              topics: [
+                "0x20dbedde9b1788c58cedd25f7d6da06117594afa3671625aab02d5ad1cac76f5",
+                `0x${7n.toString(16).padStart(64, "0")}`,
+                `0x${address.slice(2).padStart(64, "0")}`,
+              ],
+            },
+          ],
+        };
+      throw new Error(`Unexpected wallet method: ${method}`);
+    },
+  };
+  let publishAttempts = 0;
+  const service = {
+    call: async (operation, payload) => {
+      if (operation === "projects.chainTransaction") {
+        assert.deepEqual(payload, { id: "project-1" });
+        return { chain_id: 658440, to: contract, data: "0x1234", value: "0" };
+      }
+      assert.equal(operation, "projects.publish");
+      assert.deepEqual(payload, { id: "project-1", chainListingId: "7" });
+      publishAttempts += 1;
+      if (publishAttempts === 1) throw new Error("Network interrupted");
+      return { id: "project-1", published: true };
+    },
+  };
+  const request = {
+    service,
+    provider,
+    storage,
+    address,
+    project: {
+      id: "project-1",
+      terms_hash: `0x${"cd".repeat(32)}`,
+      price_wei: "100",
+      chain_listing_id: null,
+    },
+  };
+  await assert.rejects(
+    publishProjectWithWallet(request),
+    /Network interrupted/,
+  );
+  assert.equal(sends, 1);
+  assert.equal((await publishProjectWithWallet(request)).published, true);
+  assert.equal(sends, 1);
+  assert.equal(data.size, 0);
+});
+
+test("publishing stops before a chain transaction on the wrong network", async () => {
+  let called = false;
+  await assert.rejects(
+    publishProjectWithWallet({
+      service: { call: async () => (called = true) },
+      provider: { request: async () => "0x1" },
+      storage: { getItem: () => null },
+      address: "0x1111111111111111111111111111111111111111",
+      project: { id: "project-1" },
+    }),
+    /Avalanche L1/,
+  );
+  assert.equal(called, false);
 });

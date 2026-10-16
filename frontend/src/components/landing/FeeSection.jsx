@@ -1,3 +1,5 @@
+import { NETWORK_NAME, NATIVE_TOKEN_SYMBOL } from "../../lib/network.js";
+
 export default function FeeSection() {
   return (
     <section
@@ -23,10 +25,10 @@ export default function FeeSection() {
           <div className="earnings-card">
             <div className="earnings-card-top">
               <span className="small-label">AN EXAMPLE SALE</span>
-              <span className="tag">test AVAX</span>
+              <span className="tag">{NATIVE_TOKEN_SYMBOL}</span>
             </div>
             <p className="sale-amount">
-              1.00 <span>test AVAX</span>
+              1.00 <span>{NATIVE_TOKEN_SYMBOL}</span>
             </p>
             <div
               className="split-bar"
@@ -59,7 +61,7 @@ export default function FeeSection() {
         </div>
       </div>
       <p className="fee-caption">
-        Illustrative calculation. Fuji testnet uses test AVAX. Platform costs,
+        Illustrative calculation. {NETWORK_NAME} uses {NATIVE_TOKEN_SYMBOL}. Platform costs,
         including purchase gas, are paid from the platform share.
       </p>
     </section>

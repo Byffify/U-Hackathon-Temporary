@@ -121,7 +121,7 @@ def issue_challenge(body: ChallengeInput, request: Request, response: Response, 
     allowed_origin(request)
     settings = request.app.state.settings
     if body.chain_id != settings.chain_id:
-        raise ApiError(422, "WRONG_NETWORK", "Switch to Avalanche Fuji.")
+        raise ApiError(422, "WRONG_NETWORK", "Switch to the configured Avalanche L1.")
     now = request.app.state.clock()
     expiry = now + settings.challenge_ttl_seconds
     browser = request.cookies.get("utopia_challenge") or secrets.token_urlsafe(32)

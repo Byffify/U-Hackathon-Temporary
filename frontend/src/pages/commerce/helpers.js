@@ -1,4 +1,5 @@
 import { formatAvax, splitSale } from "../../utils/pricing.js";
+import { CHAIN_ID } from "../../lib/network.js";
 
 export const priceText = (units = "0") => formatAvax(BigInt(units));
 export function priceUnits(value) {
@@ -40,15 +41,6 @@ export function safeDownloadUrl(value) {
     return ["https:", "http:", "blob:"].includes(url.protocol)
       ? url.href
       : null;
-  } catch {
-    return null;
-  }
-}
-
-export function screenshotUrl(value) {
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" ? url.href : null;
   } catch {
     return null;
   }
@@ -107,8 +99,8 @@ export async function finishWalletPurchase({
     storage.setItem("utopia:payment:probe", "ready");
     storage.removeItem("utopia:payment:probe");
     const chainId = await provider.request({ method: "eth_chainId" });
-    if (String(chainId).toLowerCase() !== "0xa869")
-      throw new Error("Switch your wallet to Avalanche Fuji to continue.");
+    if (Number(chainId) !== CHAIN_ID)
+      throw new Error("Switch your wallet to Avalanche L1 to continue.");
     const result = await provider.request(purchase.walletRequest);
     receipt = { result };
     storage.setItem(`utopia:payment:${purchase.id}`, JSON.stringify(receipt));
@@ -122,3 +114,4 @@ export async function finishWalletPurchase({
     storage.removeItem(`utopia:payment:${purchase.id}`);
   return result;
 }
+

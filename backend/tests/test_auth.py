@@ -7,7 +7,7 @@ def test_wallet_signature_creates_persistent_session_and_public_profile(client):
     issued = challenge(client, wallet)
     assert "localhost:4173 wants you to sign in" in issued["message"]
     assert "URI: http://localhost:4173" in issued["message"]
-    assert "Chain ID: 43113" in issued["message"]
+    assert "Chain ID: 658440" in issued["message"]
     response = verify(client, issued, wallet)
     assert response.status_code == 200, response.text
     data = response.json()["data"]

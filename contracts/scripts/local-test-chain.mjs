@@ -2,7 +2,7 @@
 import fs from 'node:fs/promises';
 import ganache from 'ganache';
 import { ethers } from 'ethers';
-const server = ganache.server({logging:{quiet:true}, chain:{chainId:43113,hardfork:'shanghai'}});
+const server = ganache.server({logging:{quiet:true}, chain:{chainId:658440,hardfork:'cancun'}});
 await server.listen(18545, '127.0.0.1');
 const provider = new ethers.JsonRpcProvider('http://127.0.0.1:18545');
 const accounts = Object.entries(server.provider.getInitialAccounts()).map(([address,value])=>({address,key:value.secretKey}));

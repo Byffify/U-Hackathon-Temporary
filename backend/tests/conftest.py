@@ -55,7 +55,7 @@ def challenge(client, wallet):
         "/api/v1/auth/challenges",
         json={
             "address": wallet.address,
-            "chain_id": 43113,
+            "chain_id": 658440,
         },
     )
     assert response.status_code == 201, response.text

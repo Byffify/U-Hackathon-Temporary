@@ -1,4 +1,5 @@
 import { projects } from "../../data/creatorExamples.js";
+import { NATIVE_TOKEN_SYMBOL } from "../../lib/network.js";
 
 export function ProjectArt({ id, loading = "lazy" }) {
   const project = projects.find((item) => item.id === id);
@@ -46,7 +47,7 @@ export function ProjectCard({ project, onProject }) {
         </div>
         <span className="project-price">
           {project.price}
-          <small>test AVAX</small>
+          <small>{NATIVE_TOKEN_SYMBOL}</small>
         </span>
       </div>
     </article>

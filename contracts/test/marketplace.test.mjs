@@ -10,13 +10,13 @@ const fields=(pairs)=>pairs.map(([name,type])=>({name,type}));
 const primaryTypes={Purchase:fields([['listingId','uint256'],['buyer','address'],['price','uint256'],['termsHash','bytes32'],['nonce','uint256'],['deadline','uint256']])};
 const resaleTypes={ResalePurchase:fields([['tokenId','uint256'],['buyer','address'],['seller','address'],['price','uint256'],['termsHash','bytes32'],['nonce','uint256'],['deadline','uint256']])};
 async function setup(t){
- const rpc=ganache.provider({logging:{quiet:true},chain:{chainId:43113,hardfork:'shanghai'}});t.after(()=>rpc.disconnect());
+ const rpc=ganache.provider({logging:{quiet:true},chain:{chainId:658440,hardfork:'cancun'}});t.after(()=>rpc.disconnect());
  const provider=new ethers.BrowserProvider(rpc);provider.pollingInterval=10;
  const wallets=Object.values(rpc.getInitialAccounts()).map(a=>new ethers.Wallet(a.secretKey,provider));
  const signers=await Promise.all(wallets.map((_,i)=>provider.getSigner(i)));
  const [creator,platform,sponsor,buyer,other]=signers;
  const c=await new ethers.ContractFactory(artifact.abi,artifact.bytecode,creator).deploy(platform.address,sponsor.address);await c.waitForDeployment();
- const domain={name:'UTopiaMarketplace',version:'1',chainId:43113,verifyingContract:await c.getAddress()};
+ const domain={name:'UTopiaMarketplace',version:'1',chainId:658440,verifyingContract:await c.getAddress()};
  const terms=ethers.id('v1');const deadline=BigInt((await provider.getBlock('latest')).timestamp+3600);
  await(await c.createListing(101n,terms,true,false)).wait();
  const fund=async(signer,amount=1000n)=>{await(await c.connect(signer).deposit({value:amount})).wait();};

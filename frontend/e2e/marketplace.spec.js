@@ -199,7 +199,7 @@ test("resale transfers one entitlement while other library projects remain", asy
 }) => {
   await login(page);
   await page.goto("/library/ent-buyer-flora");
-  await page.getByLabel("Resale price in test AVAX").fill("0.4");
+  await page.getByLabel("Resale price in PINEM").fill("0.4");
   await page.getByRole("button", { name: "Create resale offer" }).click();
   const offerUrl = await page
     .getByRole("link", { name: "View resale offer" })

@@ -11,7 +11,7 @@ const input = {
   sources: { "UTopiaMarketplace.sol": { content: source } },
   settings: {
     optimizer: { enabled: true, runs: 200 },
-    evmVersion: "shanghai",
+    evmVersion: "cancun",
     outputSelection: { "*": { "*": ["abi", "evm.bytecode", "metadata"] } },
   },
 };
@@ -30,6 +30,6 @@ await writeFile(path.join(outDir, "UTopiaMarketplace.json"), JSON.stringify({
   abi: contract.abi,
   bytecode: `0x${contract.evm.bytecode.object}`,
   compilerVersion: solc.version(),
-  evmVersion: "shanghai",
+  evmVersion: "cancun",
 }, null, 2));
-console.log(`Compiled UTopiaMarketplace with ${solc.version()} for Shanghai EVM.`);
+console.log(`Compiled UTopiaMarketplace with ${solc.version()} for Cancun EVM.`);

@@ -19,7 +19,11 @@ import {
   FormValidationError,
 } from "../../app/ui.jsx";
 import { splitSale, formatAvax } from "../../utils/pricing.js";
-import { signInWithWallet } from "../../lib/wallet.js";
+import { NETWORK_NAME, NATIVE_TOKEN_SYMBOL } from "../../lib/network.js";
+import {
+  publishProjectWithWallet,
+  signInWithWallet,
+} from "../../lib/wallet.js";
 import {
   archiveError,
   priceText,
@@ -27,7 +31,6 @@ import {
   safeReturn,
   walletError,
   safeDownloadUrl,
-  screenshotUrl,
   imageError,
   paymentReceipt,
   finishWalletPurchase,
@@ -171,7 +174,7 @@ export function ConnectPage() {
               )}
             </div>
             {mode !== "demo" && (
-              <p className="app-muted">Avalanche Fuji · test AVAX only</p>
+              <p className="app-muted">{NETWORK_NAME} · {NATIVE_TOKEN_SYMBOL}</p>
             )}
           </>
         )}
@@ -385,6 +388,7 @@ function projectValues(project) {
   return {
     ...initialProject,
     ...project,
+    demoUrl: project.demoUrl || "",
     stack: Array.isArray(project.stack)
       ? project.stack.join(", ")
       : project.stack || "",
@@ -397,8 +401,14 @@ export function ProjectEditorPage() {
   const key = projectId || id;
   const { service, user } = useApp();
   const resource = useResource(
-    () =>
-      key ? service.call("projects.get", { id: key }) : Promise.resolve(null),
+    async () => {
+      if (!key) return null;
+      const project = await service.call("projects.get", { id: key });
+      if (service.mode !== "api" || project.status === "published")
+        return project;
+      const releases = await service.call("projects.releases", { id: key });
+      return { ...project, uploadId: releases.at(-1)?.id || null };
+    },
     [service, key],
   );
   if (resource.loading) return <Loading>Loading project…</Loading>;
@@ -414,7 +424,7 @@ export function ProjectEditorPage() {
 }
 
 function ProjectForm({ project }) {
-  const { service } = useApp();
+  const { service, user } = useApp();
   const navigate = useNavigate();
   const [search] = useSearchParams();
   const [values, setValues] = useState(
@@ -423,14 +433,13 @@ function ProjectForm({ project }) {
   const [baseline, setBaseline] = useState(JSON.stringify(values));
   const [draftId, setDraftId] = useState(project?.id);
   const [file, setFile] = useState(null);
+  const sourceUploadKey = useRef(null);
   const [upload, setUpload] = useState(
     project?.uploadId ? { id: project.uploadId } : null,
   );
   const [progress, setProgress] = useState(0);
   const [saved, setSaved] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [screenshotDraft, setScreenshotDraft] = useState("");
-  const [screenshotError, setScreenshotError] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [imageUpload, setImageUpload] = useState(null);
   const [imageProgress, setImageProgress] = useState(0);
@@ -440,7 +449,6 @@ function ProjectForm({ project }) {
   const dirty =
     JSON.stringify(values) !== baseline ||
     Boolean(file && !upload) ||
-    Boolean(screenshotDraft) ||
     Boolean(imageFile && !imageUpload);
   useDirtyGuard(dirty && !publishing);
   function change(key, value) {
@@ -484,6 +492,8 @@ function ProjectForm({ project }) {
       const result = await service.call("projects.upload", {
         projectId: draft.id,
         file,
+        version: "1.0.0",
+        idempotencyKey: (sourceUploadKey.current ??= crypto.randomUUID()),
         onProgress: setProgress,
       });
       setUpload(result);
@@ -495,26 +505,20 @@ function ProjectForm({ project }) {
     const result = await task.run(async () => {
       if (!upload) throw new Error("Upload the source ZIP before publishing.");
       const draft = await saveDraft();
-      return service.call("projects.publish", {
-        id: draft.id,
-        uploadId: upload.id || upload.uploadId,
-      });
+      return service.mode === "demo"
+        ? service.call("projects.publish", {
+            id: draft.id,
+            uploadId: upload.id || upload.uploadId,
+          })
+        : publishProjectWithWallet({
+            service,
+            provider: window.ethereum,
+            storage: window.sessionStorage,
+            project: draft,
+            address: user?.address,
+          });
     });
     if (result) setPublishing(true);
-  }
-  function addScreenshot() {
-    const url = screenshotUrl(screenshotDraft);
-    if (!url) {
-      setScreenshotError("Enter a public HTTPS image URL.");
-      return;
-    }
-    if ((values.screenshots || []).includes(url)) {
-      setScreenshotError("This screenshot is already added.");
-      return;
-    }
-    change("screenshots", [...(values.screenshots || []), url]);
-    setScreenshotDraft("");
-    setScreenshotError(null);
   }
   async function uploadImage() {
     if (!validation.validate(formRef.current)) return;
@@ -528,10 +532,11 @@ function ProjectForm({ project }) {
         onProgress: setImageProgress,
       });
       setImageUpload(result);
-      if (screenshotUrl(result.url))
+      const previewUrl = safeDownloadUrl(result.url);
+      if (previewUrl)
         change("screenshots", [
           ...(values.screenshots || []),
-          screenshotUrl(result.url),
+          previewUrl,
         ]);
       return result;
     });
@@ -592,10 +597,9 @@ function ProjectForm({ project }) {
             onChange={(e) => change("stack", e.target.value)}
           />
         </Field>
-        <Field label="Demo URL">
+        <Field label="Demo URL" hint="Optional. Add a link when your demo is ready.">
           <input
             disabled={task.busy}
-            required
             type="url"
             pattern="https?://.*"
             value={values.demoUrl}
@@ -608,35 +612,8 @@ function ProjectForm({ project }) {
             Add screenshots so buyers can see what they are getting.
           </p>
           <Field
-            label="Screenshot image URL"
-            hint="Use a public HTTPS image URL, then add it to your listing."
-          >
-            <input
-              disabled={task.busy}
-              type="url"
-              value={screenshotDraft}
-              onChange={(e) => {
-                setScreenshotDraft(e.target.value);
-                setScreenshotError(null);
-              }}
-            />
-          </Field>
-          {screenshotError && <Notice tone="error">{screenshotError}</Notice>}
-          <button
-            type="button"
-            className="app-button secondary"
-            disabled={
-              !screenshotDraft ||
-              task.busy ||
-              (values.screenshots || []).length >= 8
-            }
-            onClick={addScreenshot}
-          >
-            Add screenshot URL
-          </button>
-          <Field
             label="Upload screenshot"
-            hint="PNG, JPEG, or WebP, up to 10 MB. Demo mode records image metadata only; use a public image URL for a persistent preview."
+            hint="PNG, JPEG, or WebP, up to 10 MB. Demo mode records image metadata only."
           >
             <input
               disabled={task.busy}
@@ -670,7 +647,7 @@ function ProjectForm({ project }) {
             <Notice tone="success">
               {imageUpload.demo
                 ? "Screenshot metadata recorded for this demo. No image file is stored."
-                : "Screenshot uploaded. Save your draft to keep the preview."}
+                : "Screenshot uploaded."}
             </Notice>
           )}
           {(values.screenshots || []).length > 0 && (
@@ -708,7 +685,7 @@ function ProjectForm({ project }) {
             </div>
           )}
         </section>
-        <Field label="Price in test AVAX" hint="Up to 18 decimal places.">
+        <Field label={`Price in ${NATIVE_TOKEN_SYMBOL}`} hint="Up to 18 decimal places.">
           <input
             disabled={task.busy}
             required
@@ -718,27 +695,6 @@ function ProjectForm({ project }) {
             onChange={(e) => change("price", e.target.value)}
           />
         </Field>
-        <fieldset>
-          <legend>What can buyers do?</legend>
-          <label>
-            <input
-              disabled={task.busy}
-              type="checkbox"
-              checked={values.resaleAllowed}
-              onChange={(e) => change("resaleAllowed", e.target.checked)}
-            />{" "}
-            Resell and transfer their original license
-          </label>
-          <label>
-            <input
-              disabled={task.busy}
-              type="checkbox"
-              checked={values.derivativeAllowed}
-              onChange={(e) => change("derivativeAllowed", e.target.checked)}
-            />{" "}
-            Sell a new derivative project
-          </label>
-        </fieldset>
         <Field label="License terms">
           <textarea
             className="resize-none"
@@ -762,6 +718,7 @@ function ProjectForm({ project }) {
                 accept=".zip,application/zip"
                 onChange={(e) => {
                   setFile(e.target.files?.[0] || null);
+                  sourceUploadKey.current = null;
                   setUpload(null);
                   setProgress(0);
                 }}
@@ -784,7 +741,7 @@ function ProjectForm({ project }) {
             )}
             {upload && (
               <Notice tone="success">
-                Source ZIP uploaded. Your listing is ready to publish.
+                Source ZIP uploaded.
               </Notice>
             )}
           </section>
@@ -843,6 +800,7 @@ function ReleaseForm({ project }) {
   const [version, setVersion] = useState("");
   const [notes, setNotes] = useState("");
   const [file, setFile] = useState(null);
+  const uploadKey = useRef(null);
   const [progress, setProgress] = useState(0);
   const [done, setDone] = useState(false);
   const task = useTask();
@@ -857,14 +815,18 @@ function ReleaseForm({ project }) {
       const upload = await service.call("projects.upload", {
         projectId: project.id,
         file,
+        version: version.trim(),
+        idempotencyKey: (uploadKey.current ??= crypto.randomUUID()),
         onProgress: setProgress,
       });
-      return service.call("projects.release", {
-        projectId: project.id,
-        version: version.trim(),
-        notes: notes.trim(),
-        uploadId: upload.id || upload.uploadId,
-      });
+      return service.mode === "demo"
+        ? service.call("projects.release", {
+            projectId: project.id,
+            version: version.trim(),
+            notes: notes.trim(),
+            uploadId: upload.id || upload.uploadId,
+          })
+        : upload;
     });
     if (result) setDone(true);
   }
@@ -893,23 +855,28 @@ function ReleaseForm({ project }) {
             onChange={(e) => setVersion(e.target.value)}
           />
         </Field>
-        <Field label="Release notes">
-          <textarea
-            className="resize-none"
-            disabled={task.busy}
-            required
-            rows={5}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-        </Field>
+        {service.mode === "demo" && (
+          <Field label="Release notes">
+            <textarea
+              className="resize-none"
+              disabled={task.busy}
+              required
+              rows={5}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </Field>
+        )}
         <Field label="Updated source ZIP">
           <input
             disabled={task.busy}
             required
             type="file"
             accept=".zip,application/zip"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            onChange={(e) => {
+              setFile(e.target.files?.[0] || null);
+              uploadKey.current = null;
+            }}
           />
         </Field>
         {task.busy && (
@@ -1091,8 +1058,8 @@ export function CheckoutPage() {
         title={confirmed ? "Your project is ready" : "Review your purchase"}
       >
         {mode === "demo"
-          ? "Demo checkout · simulated test AVAX · no real transaction"
-          : "Avalanche Fuji · test AVAX only"}
+          ? `Demo checkout · simulated ${NATIVE_TOKEN_SYMBOL} · no real transaction`
+          : `${NETWORK_NAME} · ${NATIVE_TOKEN_SYMBOL}`}
       </PageTitle>
       <div className="app-grid">
         <section className="app-card app-stack">
@@ -1115,17 +1082,17 @@ export function CheckoutPage() {
           <div className="app-order-total">
             <p className="app-muted">Total</p>
             <p className="app-large-price">
-              {priceText(units)} <small>test AVAX</small>
+              {priceText(units)} <small>{NATIVE_TOKEN_SYMBOL}</small>
             </p>
           </div>
           <dl className="app-list">
             <div>
               <dt>Seller receives</dt>
-              <dd>{formatAvax(split.seller)} test AVAX</dd>
+              <dd>{formatAvax(split.seller)} {NATIVE_TOKEN_SYMBOL}</dd>
             </div>
             <div>
               <dt>Platform share (10%)</dt>
-              <dd>{formatAvax(split.platform)} test AVAX</dd>
+              <dd>{formatAvax(split.platform)} {NATIVE_TOKEN_SYMBOL}</dd>
             </div>
             <div className="app-list-prose">
               <dt>Purchase gas</dt>
@@ -1446,7 +1413,7 @@ function EntitlementDetail({ entitlement, reload }) {
                   The transferred license and its future updates move to the
                   buyer. Copies already downloaded cannot be recalled.
                 </p>
-                <Field label="Resale price in test AVAX">
+                <Field label={`Resale price in ${NATIVE_TOKEN_SYMBOL}`}>
                   <input
                     disabled={task.busy}
                     required
@@ -1493,7 +1460,7 @@ export function ResalePage() {
         <h2>{project.title}</h2>
         <p>{project.description}</p>
         <p className="app-price">
-          {priceText(offer.priceUnits)} <small>test AVAX</small>
+          {priceText(offer.priceUnits)} <small>{NATIVE_TOKEN_SYMBOL}</small>
         </p>
         <Rights project={{ ...project, ...offer.terms }} />
         <Notice>

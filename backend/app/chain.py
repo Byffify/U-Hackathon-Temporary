@@ -1,6 +1,7 @@
-"""Authoritative Fuji adapter. No unconfigured or error fallback grants rights."""
+"""Authoritative Avalanche L1 adapter. No unconfigured or error fallback grants rights."""
 
 import json
+import logging
 import re
 import threading
 from pathlib import Path
@@ -9,6 +10,9 @@ from eth_account import Account
 from eth_account.messages import encode_typed_data
 
 from app.errors import ApiError
+
+
+logger = logging.getLogger(__name__)
 
 
 def unavailable():
@@ -89,22 +93,40 @@ class ChainGateway:
         self._lock = threading.RLock()
 
     def connect(self):
-        rpc = getattr(self.settings, "fuji_rpc_url", None)
+        rpc = getattr(self.settings, "chain_rpc_url", None) or getattr(
+            self.settings, "fuji_rpc_url", None
+        )
         address = getattr(self.settings, "marketplace_contract_address", None)
         if not rpc or not address:
+            logger.warning(
+                "Marketplace chain configuration missing rpc_set=%s contract_set=%s",
+                bool(rpc),
+                bool(address),
+            )
             raise unavailable()
         try:
             from web3 import Web3
 
             web3 = Web3(Web3.HTTPProvider(rpc, request_kwargs={"timeout": 15}))
-            if web3.eth.chain_id != self.settings.chain_id or not web3.eth.get_code(address):
+            checksum_address = Web3.to_checksum_address(address)
+            rpc_chain_id = web3.eth.chain_id
+            if rpc_chain_id != self.settings.chain_id:
+                logger.warning(
+                    "Marketplace RPC chain mismatch expected=%s actual=%s",
+                    self.settings.chain_id,
+                    rpc_chain_id,
+                )
+                raise unavailable()
+            if not web3.eth.get_code(checksum_address):
+                logger.warning("Marketplace contract has no code at configured address")
                 raise unavailable()
             artifact = Path(__file__).with_name("contract_abi.json")
             abi = json.loads(artifact.read_text())
-            return web3, web3.eth.contract(address=Web3.to_checksum_address(address), abi=abi)
+            return web3, web3.eth.contract(address=checksum_address, abi=abi)
         except ApiError:
             raise
-        except Exception:
+        except Exception as exc:
+            logger.warning("Marketplace connection failed exception=%s", type(exc).__name__)
             raise unavailable() from None
 
     def call(self, name, *args):

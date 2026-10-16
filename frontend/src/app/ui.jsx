@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { Link, useBlocker } from "react-router-dom";
 import { ProjectArt } from "../components/landing/ProjectArt.jsx";
 import { formatAvax } from "../utils/pricing.js";
+import { NATIVE_TOKEN_SYMBOL } from "../lib/network.js";
 import { externalUrl } from "./navigation.js";
 
 export function PageTitle({ title, children, actions }) {
@@ -141,11 +142,11 @@ export function ProjectCard({ project }) {
           <span className="app-badge">{project.stack}</span>
           {project.isExample ? (
             <span className="app-price">
-              Example · {formatAvax(BigInt(project.priceUnits || "0"))} test AVAX
+              Example · {formatAvax(BigInt(project.priceUnits || "0"))} {NATIVE_TOKEN_SYMBOL}
             </span>
           ) : (
             <span className="app-price">
-              {formatAvax(BigInt(project.priceUnits || "0"))} test AVAX
+              {formatAvax(BigInt(project.priceUnits || "0"))} {NATIVE_TOKEN_SYMBOL}
             </span>
           )}
         </div>

@@ -6,7 +6,6 @@ import {
   priceUnits,
   safeReturn,
   walletError,
-  screenshotUrl,
   imageError,
   paymentReceipt,
   finishWalletPurchase,
@@ -56,18 +55,7 @@ test("wallet declines include recovery while other failures retain their identit
   assert.equal(walletError(failure), failure);
 });
 
-test("screenshot previews require HTTPS and image uploads enforce real image metadata", () => {
-  assert.equal(
-    screenshotUrl("https://images.example.com/preview.png"),
-    "https://images.example.com/preview.png",
-  );
-  for (const url of [
-    "javascript:alert(1)",
-    "http://example.com/a.png",
-    "data:image/png;base64,aaaa",
-    "/relative.png",
-  ])
-    assert.equal(screenshotUrl(url), null);
+test("image uploads enforce real image metadata", () => {
   assert.match(imageError({ type: "application/zip", size: 10 }), /PNG/);
   assert.match(
     imageError({ type: "image/png", size: 10 * 1024 * 1024 + 1 }),
@@ -86,7 +74,7 @@ test("payment confirmation retries reuse persisted wallet response without anoth
   let sends = 0;
   const provider = {
     request: async ({ method }) =>
-      method === "eth_chainId" ? "0xa869" : (++sends, "0xtransaction"),
+      method === "eth_chainId" ? "0xa0c08" : (++sends, "0xtransaction"),
   };
   let confirmations = 0;
   const service = {

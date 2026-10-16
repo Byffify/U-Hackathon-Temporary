@@ -1,3 +1,4 @@
+import logging
 from uuid import uuid4
 
 from fastapi import Request
@@ -5,6 +6,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.exceptions import HTTPException
+
+logger = logging.getLogger(__name__)
 
 
 class ApiError(Exception):
@@ -64,7 +67,15 @@ def install_error_handlers(app):
         )
 
     @app.exception_handler(SQLAlchemyError)
-    async def database_error(request, _):
+    async def database_error(request, exc):
+        driver_error = getattr(exc, "orig", None)
+        logger.error(
+            "Database request failed request_id=%s exception=%s driver=%s sqlstate=%s",
+            getattr(request.state, "request_id", "unknown"),
+            type(exc).__name__,
+            type(driver_error).__name__ if driver_error else "none",
+            getattr(driver_error, "sqlstate", None),
+        )
         return error_response(
             request,
             ApiError(

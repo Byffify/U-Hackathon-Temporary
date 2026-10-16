@@ -13,7 +13,7 @@ npm run dev
 
 Open `http://127.0.0.1:4173`. `.env.development` routes `/api/v1` through the Vite proxy to the Railway backend. The browser sees the API on its own origin, so wallet challenge and session cookies can be sent back during login. Set `API_PROXY_TARGET` before starting Vite to use another backend.
 
-To test wallet login against a local backend, set `API_PROXY_TARGET=http://127.0.0.1:8080` in `.env.local`. Keep the browser at `http://127.0.0.1:4173` and set the local backend's `AUTH_DOMAIN=127.0.0.1:4173` and `AUTH_URI=http://127.0.0.1:4173`; its `FRONTEND_ORIGINS` must include that origin. Use an injected wallet on Avalanche Fuji (chain ID 43113). The sign-in prompt is an off-chain signature and needs no test AVAX.
+To test wallet login against a local backend, set `API_PROXY_TARGET=http://127.0.0.1:8080` in `.env.local`. Keep the browser at `http://127.0.0.1:4173` and set the local backend's `AUTH_DOMAIN=127.0.0.1:4173` and `AUTH_URI=http://127.0.0.1:4173`; its `FRONTEND_ORIGINS` must include that origin. Use an injected wallet on the KEEPHUB Avalanche L1 (chain ID 658440). The sign-in prompt is an off-chain signature and needs no PINEM.
 
 ## Routes
 
