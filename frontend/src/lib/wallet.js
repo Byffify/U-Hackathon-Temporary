@@ -1,4 +1,49 @@
-import { CHAIN_ID, NETWORK_NAME } from "./network.js";
+import {
+  CHAIN_ID,
+  CHAIN_ID_HEX,
+  CHAIN_RPC_URL,
+  NATIVE_TOKEN_SYMBOL,
+  NETWORK_NAME,
+} from "./network.js";
+
+async function ensureWalletNetwork(provider) {
+  if (Number(await provider.request({ method: "eth_chainId" })) === CHAIN_ID)
+    return;
+  try {
+    await provider.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: CHAIN_ID_HEX }],
+    });
+  } catch (error) {
+    if (error?.code !== 4902) throw error;
+    await provider.request({
+      method: "wallet_addEthereumChain",
+      params: [
+        {
+          chainId: CHAIN_ID_HEX,
+          chainName: NETWORK_NAME,
+          rpcUrls: [CHAIN_RPC_URL],
+          nativeCurrency: {
+            name: NATIVE_TOKEN_SYMBOL,
+            symbol: NATIVE_TOKEN_SYMBOL,
+            decimals: 18,
+          },
+        },
+      ],
+    });
+    await provider.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: CHAIN_ID_HEX }],
+    });
+  }
+  if (Number(await provider.request({ method: "eth_chainId" })) !== CHAIN_ID) {
+    const error = new Error(
+      `Switch your wallet to ${NETWORK_NAME} (chain ${CHAIN_ID}).`,
+    );
+    error.code = "WRONG_NETWORK";
+    throw error;
+  }
+}
 
 /** Requests address access only: this is not a backend login or a payment. */
 export async function connectBrowserWallet(provider = globalThis.ethereum) {
@@ -19,14 +64,8 @@ export async function signInWithWallet(
   provider = globalThis.ethereum,
 ) {
   const address = await connectBrowserWallet(provider);
-  const chainId = await provider.request({ method: "eth_chainId" });
-  if (Number(chainId) !== CHAIN_ID) {
-    const error = new Error(
-      `Switch your wallet to ${NETWORK_NAME} (chain ${CHAIN_ID}), then connect again.`,
-    );
-    error.code = "WRONG_NETWORK";
-    throw error;
-  }
+  await ensureWalletNetwork(provider);
+  const chainId = CHAIN_ID_HEX;
   const challenge = await service.call("auth.challenge", { address, chainId });
   if (!challenge?.id || typeof challenge.message !== "string")
     throw new Error("The sign-in challenge is invalid. Try again.");
@@ -100,9 +139,7 @@ export async function publishProjectWithWallet({
     throw new Error(
       "Open this page in a browser with Core or MetaMask to publish.",
     );
-  const chainId = await provider.request({ method: "eth_chainId" });
-  if (Number(chainId) !== CHAIN_ID)
-    throw new Error(`Switch your wallet to ${NETWORK_NAME} to publish.`);
+  await ensureWalletNetwork(provider);
   const selected = await connectBrowserWallet(provider);
   if (!address || selected.toLowerCase() !== address.toLowerCase())
     throw new Error("Connect the wallet that owns this project to publish.");

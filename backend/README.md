@@ -1,6 +1,6 @@
 # KEEPHUB Python backend
 
-Implemented API: wallet authentication/profiles, image and encrypted ZIP uploads, projects/releases/discovery, on-chain listing/purchase/library/resale adapters, and Gemini conversations/plans/quota/jobs/output/derivative drafts. External services fail closed when unconfigured; local storage is explicitly a development mode. Real Gemini/IPFS/Modal/Fuji/Railway acceptance still requires configured services and credentials. See [marketplace handoff](../docs/backend-marketplace-handoff.md).
+Implemented API: wallet authentication/profiles, image and encrypted ZIP uploads, projects/releases/discovery, on-chain listing/purchase/library/resale adapters, and Gemini conversations/plans/quota/jobs/output/derivative drafts. External services fail closed when unconfigured; local storage is explicitly a development mode. Real Gemini/IPFS/Modal/L1/Railway acceptance still requires configured services and credentials. See [marketplace handoff](../docs/backend-marketplace-handoff.md).
 
 ## Local development
 
@@ -79,7 +79,7 @@ Auth supports EOA wallets using 65-byte personal-sign signatures only. ERC-1271 
 .venv/Scripts/ruff.exe format --check .
 ```
 
-Tests use disposable signing keys and independent SQLite files, real HTTP application boundaries, signature recovery and migrations. They do not invoke Gemini, IPFS, Fuji or a hosted database. If the desktop sandbox denies pytest's temp-directory access, run tests with the authorized terminal permissions; this is not an application failure.
+Tests use disposable signing keys and independent SQLite files, real HTTP application boundaries, signature recovery and migrations. They do not invoke Gemini, IPFS, the deployed L1 or a hosted database. If the desktop sandbox denies pytest's temp-directory access, run tests with the authorized terminal permissions; this is not an application failure.
 
 For local PostgreSQL, configure `DATABASE_URL` in `.env`, run the migration command above, then start the API.
 Migration `0006_explore_examples` creates and seeds the three preview rows. `sql/insert_explore_examples.sql` contains an idempotent PostgreSQL `INSERT` for manually restoring those rows after migration; it does not create purchasable listings.
@@ -95,8 +95,10 @@ Deploying is a separate operation; no Railway service has been created from this
 5. Disable serverless sleep if the demo must remain warm, and monitor actual trial credit usage. Trial credit is not an uptime guarantee or unlimited free hosting.
 6. Auth rate limit defaults to 30 requests/minute per ASGI client peer across challenge and verify. Counters live in SQL, shared by workers/restarts. Configure forwarded-client handling only for a verified trusted proxy path; never blindly trust arbitrary X-Forwarded-For. Without trusted proxy configuration, users behind the same proxy may share a limit. Adjust the demo budget intentionally, not by trusting user-supplied IP headers.
 
+For persistent project screenshots and avatars, attach a Railway Volume to the **backend** service at `/data` and keep `STORAGE_BACKEND=local`. Railway supplies `RAILWAY_VOLUME_MOUNT_PATH` automatically; the API stores new media under that path. Alternatively set `STORAGE_BACKEND=supabase` with a private bucket and its server-side credentials. Without either option, production image uploads fail instead of reporting success for files that disappear on redeploy. Images previously stored on ephemeral disk must be uploaded again; a database media row alone cannot restore the file.
+
 If `/api/v1/projects` returns `DATABASE_UNAVAILABLE`, check the backend service's `DATABASE_URL` reference to PostgreSQL, then run `python -m alembic current` in that service. The expected revision is `0006_explore_examples`; run `python -m alembic upgrade head` as the pre-deploy command if it is behind. Confirm `/health/ready` returns 200 before retrying Explore. After deploying this version, backend logs include the request ID, SQL exception class, and SQLSTATE without printing SQL parameters or connection details.
 
 ## External acceptance still pending
 
-No cloud services have been provisioned or deployed by this implementation. Configure IPFS/Supabase, Fuji contract/sponsor, Gemini Free Tier and optional Modal before enabling their flows. Tests distinguish local disk, controlled provider fixtures and real local-EVM integration from external integration. Production PostgreSQL execution and the Railpack image remain to be verified. Avatar binary uploads now exist at POST `/api/v1/me/avatar`; source ZIP upload is POST `/api/v1/projects/{id}/releases`.
+No cloud services have been provisioned or deployed by this implementation. Configure IPFS and persistent image storage (Supabase or Railway Volume), L1 contract/sponsor, Gemini Free Tier and optional Modal before enabling their flows. Tests distinguish local disk, controlled provider fixtures and real local-EVM integration from external integration. Production PostgreSQL execution and the Railpack image remain to be verified. Avatar binary uploads now exist at POST `/api/v1/me/avatar`; source ZIP upload is POST `/api/v1/projects/{id}/releases`.

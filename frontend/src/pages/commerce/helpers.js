@@ -50,8 +50,8 @@ export function imageError(file) {
   if (!file) return "Choose a screenshot image.";
   if (!["image/png", "image/jpeg", "image/webp"].includes(file.type))
     return "Choose a PNG, JPEG, or WebP image.";
-  if (!file.size || file.size > 10 * 1024 * 1024)
-    return "Choose a nonempty image up to 10 MB.";
+  if (!file.size || file.size > 5 * 1024 * 1024)
+    return "Choose a nonempty image up to 5 MB.";
   return null;
 }
 
@@ -114,4 +114,3 @@ export async function finishWalletPurchase({
     storage.removeItem(`utopia:payment:${purchase.id}`);
   return result;
 }
-

@@ -109,7 +109,7 @@ class Storage:
             raise ApiError(
                 503, "STORAGE_UNAVAILABLE", "Configure the protected source encryption key."
             )
-        root = Path(self.settings.storage_root)
+        root = self._local_root()
         root.mkdir(parents=True, exist_ok=True)
         key_path = root / "master.key"
         try:
@@ -123,10 +123,14 @@ class Storage:
             raise ApiError(503, "KEY_CONFIGURATION_INVALID", "Local encryption key is invalid.")
         return key
 
+    def _local_root(self) -> Path:
+        mount = self.settings.railway_volume_mount_path
+        return Path(mount) if mount else Path(self.settings.storage_root)
+
     def _path(self, key):
         if not re.fullmatch(r"[a-f0-9]{32}", key):
             raise ApiError(404, "FILE_NOT_FOUND", "File was not found.")
-        return Path(self.settings.storage_root) / "objects" / key
+        return self._local_root() / "objects" / key
 
     def _remote(self):
         s = self.settings
@@ -143,7 +147,10 @@ class Storage:
     def put_private(self, data: bytes) -> str:
         key = secrets.token_hex(16)
         if self.settings.storage_backend == "local":
-            if self.settings.environment == "production":
+            if (
+                self.settings.environment == "production"
+                and not self.settings.railway_volume_mount_path
+            ):
                 raise ApiError(
                     503, "STORAGE_UNAVAILABLE", "Configure persistent private object storage."
                 )

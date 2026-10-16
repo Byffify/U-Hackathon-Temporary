@@ -1,7 +1,7 @@
 from typing import Literal
 from urllib.parse import urlsplit
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     cookie_samesite: Literal["lax", "strict", "none"] = "lax"
     auth_requests_per_minute: int = Field(default=30, ge=1, le=1000)
     storage_root: str = ".local"
+    railway_volume_mount_path: str | None = None
     storage_backend: Literal["local", "supabase"] = "local"
     source_storage_backend: Literal["local", "ipfs"] = "local"
     storage_master_key: SecretStr | None = None
@@ -53,6 +54,13 @@ class Settings(BaseSettings):
     sandbox_image: str = "python:3.12-slim"
     sandbox_timeout_seconds: int = Field(default=180, ge=10, le=240)
     approved_open_source_hashes: list[str] = []
+
+    @field_validator("chain_id", mode="before")
+    @classmethod
+    def parse_chain_id(cls, value):
+        if isinstance(value, str) and value.isascii() and value.isdigit():
+            return int(value)
+        return value
 
     @model_validator(mode="after")
     def validate_deployment(self):

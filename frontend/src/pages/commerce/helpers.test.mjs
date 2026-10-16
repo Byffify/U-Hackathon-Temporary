@@ -58,8 +58,8 @@ test("wallet declines include recovery while other failures retain their identit
 test("image uploads enforce real image metadata", () => {
   assert.match(imageError({ type: "application/zip", size: 10 }), /PNG/);
   assert.match(
-    imageError({ type: "image/png", size: 10 * 1024 * 1024 + 1 }),
-    /10 MB/,
+    imageError({ type: "image/png", size: 5 * 1024 * 1024 + 1 }),
+    /5 MB/,
   );
   assert.equal(imageError({ type: "image/webp", size: 100 }), null);
 });

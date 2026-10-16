@@ -607,9 +607,9 @@ export const API_ROUTES = {
   "images.upload": ["POST", "/projects/:projectId/images"],
   "projects.publish": ["POST", "/projects/:id/publish"],
   "projects.release": ["POST", "/projects/:id/releases"],
-  "library.list": ["GET", "/library"],
-  "library.get": ["GET", "/library/:id"],
-  "library.download": ["POST", "/library/:id/download"],
+  "library.list": ["GET", "/me/entitlements"],
+  "library.get": ["GET", "/entitlements/:id"],
+  "library.download": ["GET", "/entitlements/:id/releases/:releaseId/download"],
   "purchases.create": ["POST", "/purchases"],
   "purchases.get": ["GET", "/purchases/:id"],
   "purchases.confirm": ["POST", "/purchases/:id/confirm"],
@@ -631,6 +631,10 @@ function apiService(baseUrl, fetchImpl) {
   const root = String(baseUrl).replace(/\/$/, "");
   let csrfToken = null;
   if (!(root.startsWith("/") && !root.startsWith("//"))) safeUrl(root);
+  const imageUploadResult = (result) => ({
+    ...result,
+    url: root.startsWith("/") ? result.url : new URL(result.url, root).href,
+  });
   const projectFromApi = (project) => {
     if (
       !project ||
@@ -666,6 +670,15 @@ function apiService(baseUrl, fetchImpl) {
       screenshots,
     };
   };
+  const entitlementFromApi = (right) => ({
+    ...right,
+    projectId: right.project_id,
+    title: right.project_title,
+    resaleAllowed: right.resale_allowed,
+    derivativeAllowed: right.derivative_allowed,
+    priceUnits: right.price_wei,
+    status: "active",
+  });
   const errorFrom = (data, status, operation) => {
     if (
       status === 401 &&
@@ -721,7 +734,7 @@ function apiService(baseUrl, fetchImpl) {
       setTimeout(() => URL.revokeObjectURL(url), 60000);
     },
   });
-  return {
+  const service = {
     mode: "api",
     async call(operation, payload = {}) {
       if (operation === "auth.demoLogin")
@@ -732,8 +745,6 @@ function apiService(baseUrl, fetchImpl) {
         fail("UNKNOWN_OPERATION", `Unknown service operation: ${operation}`);
       let [method, path] = route;
       const p = { ...payload };
-      if (operation === "explore.list" || operation === "explore.get")
-        p.include_examples = true;
       if (operation === "profiles.get" && !p.id) path = "/me/profile";
       if (operation === "auth.challenge") {
         p.chain_id = Number(p.chainId);
@@ -807,6 +818,8 @@ function apiService(baseUrl, fetchImpl) {
       delete p.idempotencyKey;
       let url = `${root}${path}`,
         body;
+      if (operation === "library.download")
+        return { url, filename: "source.zip" };
       if (method === "GET") {
         const query = new URLSearchParams();
         for (const [key, value] of Object.entries(p))
@@ -863,7 +876,14 @@ function apiService(baseUrl, fetchImpl) {
               }
               if (xhr.status < 200 || xhr.status >= 300)
                 reject(errorFrom(data, xhr.status, operation));
-              else resolve(data.data ?? data);
+              else {
+                const result = data.data ?? data;
+                resolve(
+                  operation === "images.upload"
+                    ? imageUploadResult(result)
+                    : result,
+                );
+              }
             };
             xhr.send(form);
           });
@@ -930,8 +950,31 @@ function apiService(baseUrl, fetchImpl) {
         };
       }
       const result = data?.data ?? data;
+      if (operation === "images.upload") return imageUploadResult(result);
       if (operation === "projects.get" || operation === "explore.get")
         return projectFromApi(result);
+      if (operation === "library.list") {
+        if (!Array.isArray(result))
+          fail("INVALID_RESPONSE", "The API returned an invalid library.");
+        return result.map(entitlementFromApi);
+      }
+      if (operation === "library.get") {
+        const right = entitlementFromApi(result);
+        if (!right.projectId)
+          fail("PROJECT_UNAVAILABLE", "The licensed project is unavailable.");
+        const [project, releases] = await Promise.all([
+          service.call("projects.get", { id: right.projectId }),
+          service.call("projects.releases", { id: right.projectId }),
+        ]);
+        return {
+          ...right,
+          project: {
+            ...project,
+            releases,
+            latestReleaseId: releases.at(-1)?.id || null,
+          },
+        };
+      }
       if (operation === "auth.session" || operation === "auth.verify") {
         csrfToken = result.csrf_token;
         return result.user;
@@ -943,6 +986,7 @@ function apiService(baseUrl, fetchImpl) {
       return result;
     },
   };
+  return service;
 }
 export function createService({
   mode = "demo",

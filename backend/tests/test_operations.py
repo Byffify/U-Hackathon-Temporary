@@ -77,3 +77,12 @@ def test_unsafe_deployment_configuration_is_rejected(overrides):
 def test_postgres_provider_url_is_normalized_without_exposing_credentials():
     settings = Settings(_env_file=None, database_url="postgres://user:password@localhost/utopia")
     assert settings.database_url == "postgresql+psycopg://user:password@localhost/utopia"
+
+
+def test_chain_id_accepts_railway_environment_string(monkeypatch):
+    monkeypatch.setenv("CHAIN_ID", "658440")
+    assert Settings(_env_file=None).chain_id == 658440
+
+    monkeypatch.setenv("CHAIN_ID", "1")
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)

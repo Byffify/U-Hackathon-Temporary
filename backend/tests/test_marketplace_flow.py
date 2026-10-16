@@ -61,9 +61,18 @@ def test_publish_search_free_update_and_current_holder_access(client, app, tmp_p
     assert response.status_code == 200, response.text
     listing = client.get("/api/v1/projects?q=Python&stack=Python").json()
     assert listing["meta"]["total"] == 1
+    assert listing["meta"]["stacks"] == ["Python"]
     assert listing["data"][0]["creator_name"] == "Jane"
     assert listing["data"][0]["images"] == [image_url]
     assert client.get("/api/v1/projects?q=missing").json()["data"] == []
+    unchanged = client.patch(
+        f"/api/v1/projects/{project['id']}",
+        json={"price_wei": project["price_wei"], "license_terms": project["license_terms"]},
+        headers={"X-CSRF-Token": identity["csrf_token"]},
+    )
+    assert unchanged.status_code == 200, unchanged.text
+    assert unchanged.json()["data"]["published"] is True
+    assert client.get("/api/v1/projects?q=Python").json()["meta"]["total"] == 1
     new_raw = zip_bytes({"app.py": "print('updated')"})
     second = client.post(
         f"/api/v1/projects/{project['id']}/releases",
@@ -82,6 +91,29 @@ def test_publish_search_free_update_and_current_holder_access(client, app, tmp_p
     )
     chain.allow = False
     assert client.get(path).status_code == 403
+
+
+def test_production_image_upload_uses_railway_volume(client, app, tmp_path):
+    identity = login(client)
+    project = create_project(client, identity)
+    app.state.settings.environment = "production"
+    image_bytes = io.BytesIO()
+    Image.new("RGB", (8, 8), "blue").save(image_bytes, format="PNG")
+    no_volume = client.post(
+        f"/api/v1/projects/{project['id']}/images",
+        files={"file": ("cover.png", image_bytes.getvalue(), "image/png")},
+        headers={"X-CSRF-Token": identity["csrf_token"]},
+    )
+    assert no_volume.status_code == 503
+    app.state.settings.railway_volume_mount_path = str(tmp_path / "volume")
+    response = client.post(
+        f"/api/v1/projects/{project['id']}/images",
+        files={"file": ("cover.png", image_bytes.getvalue(), "image/png")},
+        headers={"X-CSRF-Token": identity["csrf_token"]},
+    )
+    assert response.status_code == 201, response.text
+    assert len(list((tmp_path / "volume" / "objects").iterdir())) == 1
+    assert client.get(response.json()["data"]["url"]).status_code == 200
 
 
 def test_avatar_image_upload_is_real_and_invalid_image_rejected(client, app, tmp_path):

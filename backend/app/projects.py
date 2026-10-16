@@ -232,6 +232,14 @@ def list_projects(
         .limit(page_size)
     ).all()
     total = db.scalar(select(func.count()).select_from(Project).where(*conditions))
+    stacks = sorted(
+        {
+            stack.strip()
+            for value in db.scalars(select(Project.stack).where(Project.published.is_(True))).all()
+            for stack in value.split(",")
+            if stack.strip()
+        }
+    )
     project_ids = [row.id for row in rows]
     creator_ids = {row.creator_id for row in rows}
     creator_names = {
@@ -250,7 +258,7 @@ def list_projects(
             }
             for row in rows
         ],
-        "meta": {"page": page, "page_size": page_size, "total": total},
+        "meta": {"page": page, "page_size": page_size, "total": total, "stacks": stacks},
     }
 
 
@@ -292,6 +300,15 @@ def get_project(identifier: str, request: Request, db: DB, include_examples: boo
 @router.patch("/projects/{identifier}")
 def update_project(identifier: str, body: ProjectPatch, db: DB, user: Actor):
     project = owned_project(db, identifier, user)
+    offer_fields = {
+        "price_wei",
+        "license_terms",
+        "resale_allowed",
+        "derivative_allowed",
+    }
+    offer_changed = any(
+        getattr(project, key) != getattr(body, key) for key in body.model_fields_set & offer_fields
+    )
     for key in body.model_fields_set:
         value = getattr(body, key)
         if value is None and key != "demo_url":
@@ -304,12 +321,7 @@ def update_project(identifier: str, body: ProjectPatch, db: DB, user: Actor):
     project.terms_hash = terms_digest(project)
     remember_terms(db, project)
     # Changing an offer requires fresh chain matching before it is buyable again.
-    if body.model_fields_set & {
-        "price_wei",
-        "license_terms",
-        "resale_allowed",
-        "derivative_allowed",
-    }:
+    if offer_changed:
         project.published = False
     db.commit()
     return {"data": project_view(project)}
