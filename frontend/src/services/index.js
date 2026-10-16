@@ -1,5 +1,6 @@
 import { projects as examples, creators } from "../data/creatorExamples.js";
 import { splitSale } from "../utils/pricing.js";
+import { createGeminiApi } from "./gemini-api.js";
 
 export class ServiceError extends Error {
   constructor(code, message, details) {
@@ -615,16 +616,16 @@ export const API_ROUTES = {
   "resales.create": ["POST", "/resales"],
   "resales.get": ["GET", "/resales/:id"],
   "gemini.sources": ["GET", "/gemini/sources"],
-  "gemini.list": ["GET", "/gemini/sessions"],
-  "gemini.create": ["POST", "/gemini/sessions"],
-  "gemini.get": ["GET", "/gemini/sessions/:sessionId"],
-  "gemini.message": ["POST", "/gemini/sessions/:sessionId/messages"],
-  "gemini.quote": ["POST", "/gemini/sessions/:sessionId/quote"],
-  "gemini.plan": ["POST", "/gemini/sessions/:sessionId/plan"],
-  "gemini.confirm": ["POST", "/gemini/sessions/:sessionId/confirm"],
-  "gemini.job": ["GET", "/gemini/jobs/:jobId"],
-  "gemini.download": ["POST", "/gemini/jobs/:jobId/download"],
-  "gemini.import": ["POST", "/gemini/import"],
+  "gemini.list": ["GET", "/gemini/conversations"],
+  "gemini.create": ["POST", "/gemini/conversations"],
+  "gemini.get": ["GET", "/gemini/conversations/:sessionId"],
+  "gemini.message": ["POST", "/gemini/conversations/:sessionId/messages"],
+  "gemini.quote": ["POST", "/gemini/conversations/:sessionId/estimates"],
+  "gemini.plan": ["POST", "/gemini/conversations/:sessionId/plans"],
+  "gemini.confirm": ["POST", "/gemini/plans/:planId/confirm"],
+  "gemini.job": ["GET", "/jobs/:jobId"],
+  "gemini.download": ["GET", "/outputs/:outputId/download"],
+  "gemini.import": ["POST", "/gemini/source-imports"],
 };
 function apiService(baseUrl, fetchImpl) {
   const root = String(baseUrl).replace(/\/$/, "");
@@ -678,11 +679,54 @@ function apiService(baseUrl, fetchImpl) {
       data?.error?.details,
     );
   };
+  const gemini = createGeminiApi({
+    fail,
+    async request(path, { method = "GET", body, key, binary = false } = {}) {
+      const headers = {
+        Accept: binary ? "application/zip" : "application/json",
+      };
+      if (method !== "GET" && csrfToken) headers["X-CSRF-Token"] = csrfToken;
+      if (key) headers["Idempotency-Key"] = key;
+      if (body !== undefined) headers["Content-Type"] = "application/json";
+      let response;
+      try {
+        response = await fetchImpl(`${root}${path}`, {
+          method,
+          credentials: "include",
+          headers,
+          body: body === undefined ? undefined : JSON.stringify(body),
+        });
+      } catch {
+        fail("NETWORK_ERROR", "Unable to reach the API. Please retry.");
+      }
+      if (binary && response.ok) return response.blob();
+      let result;
+      try {
+        result = await response.json();
+      } catch {
+        throw errorFrom(null, response.status, "gemini.request");
+      }
+      if (!response.ok)
+        throw errorFrom(result, response.status, "gemini.request");
+      return result.data;
+    },
+    saveDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    },
+  });
   return {
     mode: "api",
     async call(operation, payload = {}) {
       if (operation === "auth.demoLogin")
         fail("API_MODE", "Demo accounts are only available in demo mode.");
+      if (operation.startsWith("gemini.")) return gemini(operation, payload);
       const route = API_ROUTES[operation];
       if (!route)
         fail("UNKNOWN_OPERATION", `Unknown service operation: ${operation}`);

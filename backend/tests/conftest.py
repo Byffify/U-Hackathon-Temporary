@@ -28,6 +28,7 @@ def clock():
 @pytest.fixture
 def settings(tmp_path):
     return Settings(
+        _env_file=None,
         environment="test",
         database_url=f"sqlite:///{tmp_path / 'app.db'}",
         auth_requests_per_minute=1000,

@@ -1,4 +1,6 @@
-# Manual test steps — local demo (ไม่ deploy Fuji)
+# Manual test steps — local demo (ไม่ deploy KEEPHUB L1)
+
+> อัปเดตหลัง pull: config ปัจจุบันใช้ KEEPHUB Avalanche L1 chain ID **658440**, สัญลักษณ์ **PINEM**. รอบนี้ไม่ deploy เครือข่ายสาธารณะ โหมด UI demo ทดสอบ interaction เท่านั้น: Library และ Gemini **ไม่ส่ง ZIP จริง**; กดดาวน์โหลดควรแจ้ง unavailable โดยไม่แสดงว่าสร้างไฟล์จริงสำเร็จ เคสดาวน์โหลดจริงในคู่มือต้องใช้ Local API ที่ตั้งค่าพร้อมแล้วเท่านั้น
 
 อัปเดต 16 ตุลาคม 2026 — 92 เคสจากคู่มือเดิม แยกขั้นตอนและ expected result ของทุกเคส เอกสารนี้ไม่ใช่ผลทดสอบและไม่ได้ส่งธุรกรรมใด ๆ
 
@@ -7,7 +9,7 @@
 1. ทดสอบ UI ด้วยโหมด demo ให้ครบ flow ก่อน ใช้ browser profile สำหรับทดสอบโดยเฉพาะ
 2. ทดสอบ Local API จริงสำหรับ wallet/session/profile/project/upload/download ของ Creator
 3. ทดสอบ Gemini จริงต่อเมื่อ API + worker มี config พร้อม หากไม่พร้อมให้ BLOCKED ห้ามใช้คำตอบจำลองนับว่าผ่าน provider จริง
-4. ไม่ต้องใช้ Ankr/Fuji RPC หรือเติม test AVAX เพื่อทดสอบ UI demo และ source ของ Creator ใน Local API
+4. ไม่ต้องใช้ Ankr/KEEPHUB L1 RPC หรือเติม เหรียญทดสอบ PINEM เพื่อทดสอบ UI demo และ source ของ Creator ใน Local API
 5. กลุ่ม C/R ตรวจระบบเงินจริงบนเชนไม่ได้หากไม่มี Contract: ใช้เชนจำลองในเครื่องเพื่อ integration หรือระบุ BLOCKED สำหรับ manual API; UI demo ผ่านได้เฉพาะหน้าจอจำลอง
 
 ## เตรียมก่อนทดสอบ
@@ -20,7 +22,7 @@
 
 ### UI demo
 
-แก้ frontend/.env.local เฉพาะตัวแปรต่อไปนี้แล้ว restart Vite:
+แก้ frontend/.env.development.local เฉพาะตัวแปรต่อไปนี้แล้ว restart Vite:
 
 ```dotenv
 VITE_SERVICE_MODE=demo
@@ -35,7 +37,7 @@ npm run dev
 
 ### Local API จริง
 
-ตั้ง frontend/.env.local แล้ว restart Vite:
+ตั้ง frontend/.env.development.local แล้ว restart Vite:
 
 ```dotenv
 VITE_SERVICE_MODE=api
@@ -43,7 +45,7 @@ VITE_API_BASE_URL=/api/v1
 API_PROXY_TARGET=http://127.0.0.1:8000
 ```
 
-Backend ต้องมี dependencies/migrations ตาม backend/README.md; .env ใช้ development/local storage และตั้ง AUTH_DOMAIN=127.0.0.1:4173, AUTH_URI=http://127.0.0.1:4173, FRONTEND_ORIGINS=["http://127.0.0.1:4173"] ให้ตรง browser ส่วน chain_id ใช้ค่า default 43113 ของแอป
+Backend ต้องมี dependencies/migrations ตาม backend/README.md; .env ใช้ development/local storage และตั้ง AUTH_DOMAIN=127.0.0.1:4173, AUTH_URI=http://127.0.0.1:4173, FRONTEND_ORIGINS=["http://127.0.0.1:4173"] ให้ตรง browser ส่วน chain_id ใช้ค่า default 658440 ของแอป
 
 Desktop checkout ยังไม่มี .venv ของตนเอง ณ เวลาจัดทำ ใช้ Python 3.12 runtime เดิมที่มี dependencies อยู่ได้ดังนี้ (ตรวจ path มีจริงก่อน):
 
@@ -68,10 +70,10 @@ Credentials ใน contracts/.env ไม่ถูกโหลดเป็น bac
 
 - เรียกจากหน้า Frontend ผ่าน proxy เพื่อให้ cookie/Origin ถูกต้อง; Swagger origin ไม่อยู่ allowlist อาจทำให้ auth POST ถูกปฏิเสธ
 - ใช้ live /docs หรือ /openapi.json; ทุก mutation ที่มี session ต้องมี X-CSRF-Token และ Origin ที่ถูกต้อง
-- หน้าจอ Upload/Library/Purchases/Resale/Gemini ยังมี path/payload adapter ไม่ตรง Backend ให้บันทึก UI integration FAIL/BLOCKED แล้วทดสอบ backend API แยก ไม่เปลี่ยนไป demo แล้วนับผ่านจริง
+- หน้าจอ Library/Purchases/Resale ยังมี path/payload adapter ไม่ตรง Backend; Upload ZIP และ Gemini ปัจจุบันเชื่อม contract แล้ว แต่ต้องบันทึกผลทดสอบจริงแยกจาก demo ให้บันทึก UI integration FAIL/BLOCKED แล้วทดสอบ backend API แยก ไม่เปลี่ยนไป demo แล้วนับผ่านจริง
 - Retry แบบเดิมต้องใช้ Idempotency-Key เดิม; operation ใหม่ใช้ key ใหม่; ห้ามใช้ qaApi JSON helper ดาวน์โหลด ZIP ให้ใช้ fetch + blob หรือ GET URL แทน
 
-### เชนจำลองเมื่อไม่ deploy Fuji
+### เชนจำลองเมื่อไม่ deploy KEEPHUB L1
 
 Contract tests จำลองเชนเอง ไม่ใช้กระเป๋า/คีย์จริง:
 
@@ -199,7 +201,7 @@ S → A → P → U → G → D → O สำหรับ Local API; C/R ใช�
 
 ## Wallet / authentication / session
 
-เงื่อนไขก่อนเริ่ม: ใช้โหมด API, Wallet ทดสอบ A/B และ browser profile แยก; chain ที่ Wallet เลือกต้อง 43113 สำหรับ login แต่ไม่ต้องถือ test AVAX เพื่อ personal_sign
+เงื่อนไขก่อนเริ่ม: ใช้โหมด API, Wallet ทดสอบ A/B และ browser profile แยก; chain ที่ Wallet เลือกต้อง 658440 สำหรับ login แต่ไม่ต้องถือ เหรียญทดสอบ PINEM เพื่อ personal_sign
 
 ### A01
 
@@ -214,7 +216,7 @@ S → A → P → U → G → D → O สำหรับ Local API; C/R ใช�
 ### A02
 
 1. ถ้าเคสต้องเริ่มจาก login ให้ A เซ็น challenge ที่ backend คืนจริง และใช้ cookie/CSRF ของ profile นั้น
-2. Connect ด้วย A บน Fuji ยืนยัน personal_sign
+2. Connect ด้วย A บน KEEPHUB L1 ยืนยัน personal_sign
 3. ตรวจผลตามด้านล่าง แล้วบันทึก response/request_id หรือหลักฐานหน้าจอ โดยไม่แนบ secret
 
 **Expected:** challenge → verify สำเร็จ, มีบัญชี/session, เห็น A
@@ -247,7 +249,7 @@ S → A → P → U → G → D → O สำหรับ Local API; C/R ใช�
 2. ใช้ chain อื่น / ไม่มี wallet extension
 3. ตรวจผลตามด้านล่าง แล้วบันทึก response/request_id หรือหลักฐานหน้าจอ โดยไม่แนบ secret
 
-**Expected:** บอกให้เปลี่ยน Fuji / ติดตั้ง wallet ไม่สร้าง session
+**Expected:** บอกให้เปลี่ยน KEEPHUB L1 / ติดตั้ง wallet ไม่สร้าง session
 
 ผลจริง: __________  สถานะ: NOT RUN / PASS / FAIL / BLOCKED / N/A
 
@@ -541,7 +543,7 @@ S → A → P → U → G → D → O สำหรับ Local API; C/R ใช�
 
 ## Listing / purchase / library บนเชนจำลอง
 
-เงื่อนไขก่อนเริ่ม: เคส API ต้องมี local-chain Gateway ที่เชื่อม Contract จริงในเครื่องพร้อม A/B/Sponsor test accounts; หากไม่มีให้ BLOCKED ไม่เรียก Fuji แทน
+เงื่อนไขก่อนเริ่ม: เคส API ต้องมี local-chain Gateway ที่เชื่อม Contract จริงในเครื่องพร้อม A/B/Sponsor test accounts; หากไม่มีให้ BLOCKED ไม่เรียก KEEPHUB L1 แทน
 
 ### C01
 
@@ -551,7 +553,7 @@ S → A → P → U → G → D → O สำหรับ Local API; C/R ใช�
 2. A ขอ POST `/projects/{id}/chain-transaction`, ตรวจ to/chain/value/data แล้วส่งผ่าน wallet
 3. ตรวจผลตามด้านล่าง แล้วบันทึก response/request_id หรือหลักฐานหน้าจอ โดยไม่แนบ secret
 
-**Expected:** createListing ลง Fuji จริง; A จ่าย gas
+**Expected:** createListing ลงเชนจำลองจริง; A จ่าย gas เป็นเหรียญจำลอง
 
 ผลจริง: __________  สถานะ: NOT RUN / PASS / FAIL / BLOCKED / N/A
 
@@ -1132,6 +1134,6 @@ Status / blocker:
 
 - UI demo: ค้นหา → login demo → draft/upload → purchase/library → resale → Gemini plan/confirm/download พร้อม error states ผ่านในขอบเขต simulation
 - Local API: nonce/signature/session/profile → owner source upload/download/persistence ผ่าน; เปิด Gemini จริงแล้วค่อยนับ G provider flow
-- Blockchain: หากรัน local EVM ได้ให้บันทึกผลเชนจำลองแยกจาก UI; ไม่ต้อง deploy Fuji และไม่อ้างว่า public-chain acceptance ผ่าน
+- Blockchain: หากรัน local EVM ได้ให้บันทึกผลเชนจำลองแยกจาก UI; ไม่ต้อง deploy KEEPHUB L1 และไม่อ้างว่า public-chain acceptance ผ่าน
 - Cloud/HTTPS/VM redeploy acceptance เป็น deferred ตามขอบเขตนี้
 - ทุกเคสต้องมีผลจริง ไม่มีการติ๊ก PASS จากการอ่านคู่มือหรือ automated test ของคนละ flow

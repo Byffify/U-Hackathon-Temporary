@@ -1,5 +1,7 @@
 # Manual test — U-topia / KEEPHUB demo
 
+> อัปเดตหลัง pull: config ปัจจุบันใช้ KEEPHUB Avalanche L1 chain ID **658440**, สัญลักษณ์ **PINEM**. รอบนี้ไม่ deploy เครือข่ายสาธารณะ โหมด UI demo ทดสอบ interaction เท่านั้น: Library และ Gemini **ไม่ส่ง ZIP จริง**; กดดาวน์โหลดควรแจ้ง unavailable โดยไม่แสดงว่าสร้างไฟล์จริงสำเร็จ เคสดาวน์โหลดจริงในคู่มือต้องใช้ Local API ที่ตั้งค่าพร้อมแล้วเท่านั้น
+
 จัดทำ 16 ตุลาคม 2026 จากโค้ดใน workspace นี้ เป็นคู่มือทดสอบ ไม่ใช่รายงานว่าทดสอบผ่านแล้ว
 
 ## 1. ขอบเขตและวิธีบันทึกผล
@@ -10,7 +12,7 @@
 | --- | --- | --- |
 | UI demo | Frontend `VITE_SERVICE_MODE=demo` ใช้ browser storage / provider จำลอง | หน้าจอ การนำทาง interaction เท่านั้น |
 | Local API | Python จริง + SQLite + encrypted local files + wallet login | บัญชี/session/upload/ownership และ Gemini จริงเมื่อเปิด worker และมี API ใช้ได้ |
-| Fuji integration | Local API + Contract ที่ deploy จริงบน Fuji + funded wallets | การซื้อ สิทธิ์ ดาวน์โหลด ขายต่อ และการแบ่งเงินบนเชน |
+| KEEPHUB L1 integration | Local API + Contract ที่ deploy จริงบน KEEPHUB L1 + funded wallets | การซื้อ สิทธิ์ ดาวน์โหลด ขายต่อ และการแบ่งเงินบนเชน |
 
 สถานะของแต่ละเคส: `NOT RUN`, `PASS`, `FAIL`, `BLOCKED`, `N/A` พร้อมเหตุผล ห้ามนับ BLOCKED เป็น PASS
 
@@ -18,7 +20,7 @@
 
 ### เส้นทางลองหน้าจออย่างเดียว (UI demo)
 
-ตั้ง `VITE_SERVICE_MODE=demo` ใน frontend/.env.local แล้ว restart Vite ใช้ browser profile แยกจาก API run และกลับ `api` ก่อนทดสอบ Backend
+ตั้ง `VITE_SERVICE_MODE=demo` ใน frontend/.env.development.local แล้ว restart Vite ใช้ browser profile แยกจาก API run และกลับ `api` ก่อนทดสอบ Backend
 
 1. เปิด `/` → `/explore` → project detail → creator profile → demo link; ลอง search/filter/empty state
 2. เปิด `/connect` เลือก demo creator → profile settings → `/workspace/projects` → new project → save draft → รูป/ZIP → publish → ตรวจ public detail
@@ -35,12 +37,12 @@ Frontend มีบาง operation ที่ยังใช้ API คนละ�
 
 | ส่วน | Frontend เรียก | Backend ที่มีจริง |
 | --- | --- | --- |
-| อัปโหลด ZIP | `/projects/{id}/uploads` | POST `/projects/{id}/releases` พร้อม multipart `file`, `version` |
+| อัปโหลด ZIP (path ตรงแล้ว) | POST `/projects/{id}/releases` | multipart `file`, `version` และ Idempotency-Key; ต้องทดสอบ payload/response ต่อ |
 | Library | `/library` | GET `/me/entitlements` |
 | รายละเอียด/ดาวน์โหลดสิทธิ์ | `/library/{id}`, POST download | GET `/entitlements/{id}`, GET `/entitlements/{id}/releases/{releaseId}/download` |
 | ซื้อ | `/purchases` | `/purchase-intents` |
 | ขายต่อ | `/resales` | `/resale-offers` |
-| Gemini | `/gemini/sessions`, `/gemini/jobs`, `/gemini/import` | `/gemini/conversations`, `/jobs`, `/gemini/source-imports` |
+| Gemini (เชื่อมแล้ว) | adapter ใช้ `/gemini/conversations`, `/jobs`, private binary download | source-import แบบ URL อย่างเดียวยังไม่รองรับ ต้องมี ZIP/license evidence |
 
 อ้างอิง `frontend/src/services/index.js` และ router ใน `backend/app/` ต้องตรวจ payload/response และ wallet transaction orchestration ด้วย การเปลี่ยนชื่อ path อย่างเดียวไม่รับประกันว่าเชื่อมครบ
 
@@ -54,7 +56,7 @@ Frontend มีบาง operation ที่ยังใช้ API คนละ�
 
 - Wallet A: Creator / Wallet B: Buyer / Wallet C: Resale buyer หรือผู้ไม่มีสิทธิ์ ใช้ browser profile แยกเพื่อไม่ให้ cookie ปนกัน
 - Deployer และ Sponsor เป็นกระเป๋าทดสอบ ค่า sponsor ต้องตรงกับ immutable sponsor ใน Contract
-- Contract ยังไม่ deploy หรือ sponsor ไม่มี test AVAX: ทดสอบ local API ต่อได้ แต่เคสซื้อขายบน Fuji เป็น BLOCKED
+- Contract ยังไม่ deploy หรือ sponsor ไม่มี เหรียญทดสอบ PINEM: ทดสอบ local API ต่อได้ แต่เคสซื้อขายบน KEEPHUB L1 เป็น BLOCKED
 - เตรียม `site-v1.zip`, `site-v2.zip`: index.html + README + source ของตนเอง เนื้อหาต่างกันและไม่ใส่ credentials
 - เตรียม PNG/JPEG จริง, ไฟล์ text ที่เปลี่ยนนามสกุลเป็น PNG, ไฟล์ที่ไม่ใช่ ZIP, ZIP ว่าง และ ZIP ที่มี path `../escape.txt` สำหรับ negative test ในเครื่องทดสอบเท่านั้น
 - เตรียม Project P ที่อนุญาต resale/derivative และ Project Q ที่ปิดทั้งสองสิทธิ์ เพื่อเทียบพฤติกรรม
@@ -75,7 +77,7 @@ SOURCE_STORAGE_BACKEND=local
 STORAGE_ROOT=.local
 ```
 
-Fuji เป็นค่า default 43113 อยู่แล้ว หากการตั้ง `CHAIN_ID=43113` ผ่าน env ทำให้เกิด Literal validation error ให้เอาบรรทัด override ออก ใช้ default แล้วบันทึก configuration defect นี้
+KEEPHUB L1 เป็นค่า default 658440 อยู่แล้ว หากการตั้ง `CHAIN_ID=658440` ผ่าน env ทำให้เกิด Literal validation error ให้เอาบรรทัด override ออก ใช้ default แล้วบันทึก configuration defect นี้
 
 ```powershell
 cd C:\Users\66809\Desktop\U-Hackathon-Temporary\backend
@@ -93,7 +95,7 @@ API และ worker ต้องใช้ revision, working directory, DATABASE
 
 ### รัน Frontend เชื่อม API ในเครื่อง
 
-แก้เฉพาะตัวแปรเหล่านี้ใน `frontend/.env.local` แล้วรีสตาร์ต Vite:
+แก้เฉพาะตัวแปรเหล่านี้ใน `frontend/.env.development.local` แล้วรีสตาร์ต Vite:
 
 ```dotenv
 VITE_SERVICE_MODE=api
@@ -132,10 +134,10 @@ Swagger อยู่คนละ origin กับ Frontend; auth POST ต้อ�
 | ID | ทำอะไร | ผลที่ควรได้ |
 | --- | --- | --- |
 | A01 | เปิด protected route เช่น `/workspace/projects` ขณะ logout | ขอ login และกลับหน้าที่ตั้งใจเมื่อสำเร็จ |
-| A02 | Connect ด้วย A บน Fuji ยืนยัน personal_sign | challenge → verify สำเร็จ, มีบัญชี/session, เห็น A |
+| A02 | Connect ด้วย A บน KEEPHUB L1 ยืนยัน personal_sign | challenge → verify สำเร็จ, มีบัญชี/session, เห็น A |
 | A03 | login ครั้งแรก จด user.id แล้ว logout/login address เดิม | ได้บัญชีเดิม ไม่สร้าง user ใหม่ทุกครั้ง |
 | A04 | ปฏิเสธ connect หรือ signature ใน wallet | ยังคง logout มีข้อความและ retry ได้ |
-| A05 | ใช้ chain อื่น / ไม่มี wallet extension | บอกให้เปลี่ยน Fuji / ติดตั้ง wallet ไม่สร้าง session |
+| A05 | ใช้ chain อื่น / ไม่มี wallet extension | บอกให้เปลี่ยน KEEPHUB L1 / ติดตั้ง wallet ไม่สร้าง session |
 | A06 | เรียก GET `/auth/session` หลัง reload และหลัง restart API | session เดิมยังใช้ได้เมื่อยังไม่หมดอายุ; UI ไม่หายเพราะ refresh |
 | A07 | ส่ง challenge/signature เดิมซ้ำหลัง verify แล้ว | ไม่สร้าง session ใหม่; ปฏิเสธ replay |
 | A08 | ออก challenge แล้วรอเกิน 5 นาทีค่อย verify | ปฏิเสธ challenge หมดอายุ |
@@ -174,13 +176,13 @@ Swagger อยู่คนละ origin กับ Frontend; auth POST ต้อ�
 | U12 | อัปโหลด v2 `version=1.1.0` โดย A | v1 ยัง immutable, v2 มี ID/hash ใหม่ |
 | U13 | publish โดยยังไม่มี source release | conflict SOURCE_REQUIRED ไม่เผยแพร่ |
 
-## 7. Publish / purchase / library — ต้องพร้อม Fuji
+## 7. Publish / purchase / library — ต้องพร้อม KEEPHUB L1
 
-ก่อนเริ่ม: chain 43113, Contract มี bytecode, ABI ตรง, sponsor key ตรง sponsor(), A/B/C มี test AVAX สำหรับธุรกรรมที่ตนส่งเอง และ API ใช้ relayer หนึ่ง process ต่อ sponsor
+ก่อนเริ่ม: chain 658440, Contract มี bytecode, ABI ตรง, sponsor key ตรง sponsor(), A/B/C มี เหรียญทดสอบ PINEM สำหรับธุรกรรมที่ตนส่งเอง และ API ใช้ relayer หนึ่ง process ต่อ sponsor
 
 | ID | ทำอะไร | ผลที่ควรได้ |
 | --- | --- | --- |
-| C01 | A ขอ POST `/projects/{id}/chain-transaction`, ตรวจ to/chain/value/data แล้วส่งผ่าน wallet | createListing ลง Fuji จริง; A จ่าย gas |
+| C01 | A ขอ POST `/projects/{id}/chain-transaction`, ตรวจ to/chain/value/data แล้วส่งผ่าน wallet | createListing ลง KEEPHUB L1 จริง; A จ่าย gas |
 | C02 | จาก receipt `ListingCreated` จด numeric listingId แล้ว POST `/projects/{id}/publish` ด้วย `chain_listing_id` เป็น string | Backend ตรวจ owner/price/terms/permissions ตรง จึง published และ public catalog เห็น |
 | C03 | ลอง publish listing ของ B, ราคาหรือ terms ไม่ตรง, listing ผูก project อื่นแล้ว | conflict ไม่ปล่อย published ลวง |
 | C04 | B สร้าง POST `/purchase-intents` ด้วย project_id และ key ใหม่ | ได้ intent ID, authorization, funding; typed uint256 เป็น decimal strings ห้ามแปลง Number |
@@ -215,7 +217,7 @@ Swagger อยู่คนละ origin กับ Frontend; auth POST ต้อ�
 
 ## 9. Gemini / quota / jobs / output — ใช้ provider จริง
 
-ใช้ source ของ A เองทดสอบ AI ได้โดยไม่ต้องรอซื้อบน Fuji เปิด API + worker และใช้ Free Tier project/key ที่ถูกต้อง การตั้ง flag ไม่เปลี่ยน billing ของ Google; provider 429 ไม่ถือว่าทดสอบ AI ผ่าน ห้ามใช้ UI demo เป็นหลักฐานว่า Gemini ถูกเรียกจริง
+ใช้ source ของ A เองทดสอบ AI ได้โดยไม่ต้องรอซื้อบน KEEPHUB L1 เปิด API + worker และใช้ Free Tier project/key ที่ถูกต้อง การตั้ง flag ไม่เปลี่ยน billing ของ Google; provider 429 ไม่ถือว่าทดสอบ AI ผ่าน ห้ามใช้ UI demo เป็นหลักฐานว่า Gemini ถูกเรียกจริง
 
 | ID | ทำอะไร | ผลที่ควรได้ |
 | --- | --- | --- |
@@ -290,8 +292,8 @@ async function qaApi(path, method = "GET", body, key) {
   return payload.data;
 }
 var qaWallet = (await ethereum.request({method:"eth_requestAccounts"}))[0];
-if (Number(await ethereum.request({method:"eth_chainId"})) !== 43113) throw new Error("Switch wallet to Fuji first");
-var qaChallenge = await qaApi("/auth/challenges", "POST", {address:qaWallet, chain_id:43113});
+if (Number(await ethereum.request({method:"eth_chainId"})) !== 658440) throw new Error("Switch wallet to KEEPHUB L1 first");
+var qaChallenge = await qaApi("/auth/challenges", "POST", {address:qaWallet, chain_id:658440});
 var qaHex = "0x" + Array.from(new TextEncoder().encode(qaChallenge.message), b => b.toString(16).padStart(2,"0")).join("");
 var qaSignature = await ethereum.request({method:"personal_sign", params:[qaHex,qaWallet]});
 var qaSession = await qaApi("/auth/verify", "POST", {challenge_id:qaChallenge.id, signature:qaSignature});
@@ -323,7 +325,7 @@ Transaction preparation ของ Backend มี `chain_id,to,data,value` แต
 
 ```javascript
 async function qaSendTransaction(prepared) {
-  if (prepared.chain_id !== 43113 || Number(await ethereum.request({method:"eth_chainId"})) !== 43113)
+  if (prepared.chain_id !== 658440 || Number(await ethereum.request({method:"eth_chainId"})) !== 658440)
     throw new Error("Wrong chain");
   return ethereum.request({method:"eth_sendTransaction", params:[{
     from:qaWallet, to:prepared.to, data:prepared.data,
@@ -364,7 +366,7 @@ async function qaSendTransaction(prepared) {
 
 Local storage ปัจจุบันเป็น development mode และถูกบล็อกใน production; production Settings ยังบังคับ PostgreSQL/HTTPS ด้วย ดังนั้นการ deploy demo แบบ VM local disk ต้องเตรียมโหมดและการป้องกันที่เหมาะสมก่อน ไม่ควรแค่เปลี่ยน ENVIRONMENT=production แล้วคาดว่าจะใช้ local files ได้ทันที และ health ready ไม่ได้ตรวจ Gemini/RPC/sponsor ครบ
 
-เกณฑ์พร้อมสาธิต: A login → สร้าง P/upload → publish บน Fuji → B deposit/buy → download → A upload v2 → B download โดยไม่ซื้อซ้ำ → B resale ให้ C → ตรวจสิทธิ์หลัง resale → C ใช้ Gemini plan/confirm/download output ผ่าน API จริง และบันทึกว่าหน้าจอใดเชื่อมสำเร็จ/ยังต้องใช้ API โดยตรง
+เกณฑ์พร้อมสาธิต: A login → สร้าง P/upload → publish บน KEEPHUB L1 → B deposit/buy → download → A upload v2 → B download โดยไม่ซื้อซ้ำ → B resale ให้ C → ตรวจสิทธิ์หลัง resale → C ใช้ Gemini plan/confirm/download output ผ่าน API จริง และบันทึกว่าหน้าจอใดเชื่อมสำเร็จ/ยังต้องใช้ API โดยตรง
 
 ถ้าจะสาธิตเฉพาะ local upload + AI ให้ระบุขอบเขตนั้นและทำ C/R เป็น BLOCKED ไม่เรียกว่า marketplace end-to-end ผ่านแล้ว
 
@@ -372,7 +374,7 @@ Local storage ปัจจุบันเป็น development mode และถ
 
 ```text
 Run date / commit:
-Mode: UI demo | Local API | Fuji integration
+Mode: UI demo | Local API | KEEPHUB L1 integration
 API / FE origin:
 Case ID:
 Status: NOT RUN | PASS | FAIL | BLOCKED | N/A

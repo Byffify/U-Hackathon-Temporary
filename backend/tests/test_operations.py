@@ -71,9 +71,9 @@ def test_unknown_endpoint_and_validation_have_standard_envelope(client):
 )
 def test_unsafe_deployment_configuration_is_rejected(overrides):
     with pytest.raises(ValidationError):
-        Settings(**overrides)
+        Settings(_env_file=None, **overrides)
 
 
 def test_postgres_provider_url_is_normalized_without_exposing_credentials():
-    settings = Settings(database_url="postgres://user:password@localhost/utopia")
+    settings = Settings(_env_file=None, database_url="postgres://user:password@localhost/utopia")
     assert settings.database_url == "postgresql+psycopg://user:password@localhost/utopia"
