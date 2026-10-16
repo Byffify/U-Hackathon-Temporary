@@ -482,6 +482,55 @@ test("API screenshot uploads resolve media URLs against the backend origin", asy
   );
 });
 
+test("API purchase follows purchase-intent routes and sends the confirm idempotency key", async () => {
+  const requests = [];
+  const authorization = {
+    primaryType: "Purchase",
+    domain: { chainId: 658440, verifyingContract: `0x${"12".repeat(20)}` },
+    message: { buyer: `0x${"34".repeat(20)}`, price: "100" },
+    types: {},
+  };
+  const service = createService({
+    mode: "api",
+    fetchImpl: async (url, options) => {
+      requests.push({ url, options });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          data: {
+            id: "intent-1",
+            project_id: "project-1",
+            status: "pending",
+            authorization,
+            funding: { balance_wei: "0" },
+          },
+        }),
+      };
+    },
+  });
+  const intent = await service.call("purchases.create", {
+    projectId: "project-1",
+    idempotencyKey: "create-1",
+  });
+  assert.equal(requests[0].url, "/api/v1/purchase-intents");
+  assert.deepEqual(JSON.parse(requests[0].options.body), {
+    project_id: "project-1",
+  });
+  assert.equal(requests[0].options.headers["Idempotency-Key"], "create-1");
+  assert.equal(intent.projectId, "project-1");
+  assert.equal(intent.walletRequest.method, "eth_signTypedData_v4");
+  await service.call("purchases.confirm", {
+    id: "intent-1",
+    result: `0x${"ab".repeat(65)}`,
+  });
+  assert.equal(requests[1].url, "/api/v1/purchase-intents/intent-1/confirm");
+  assert.deepEqual(JSON.parse(requests[1].options.body), {
+    signature: `0x${"ab".repeat(65)}`,
+  });
+  assert.equal(requests[1].options.headers["Idempotency-Key"], "intent-1");
+});
+
 test("API source ZIP upload uses the backend release route and required metadata", async () => {
   const requests = [];
   const s = createService({

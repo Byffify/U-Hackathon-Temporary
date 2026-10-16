@@ -923,7 +923,7 @@ export function CheckoutPage() {
   const [checking, setChecking] = useState(false);
   const [receiptSaved, setReceiptSaved] = useState(false);
   const task = useTask();
-  const idempotency = useRef(null);
+  const idempotency = useRef(crypto.randomUUID());
   const resource = useResource(async () => {
     const [project, offer, entitlements] = await Promise.all([
       service.call("projects.get", { id: projectId }),
@@ -981,7 +981,8 @@ export function CheckoutPage() {
               },
         );
         setPollError(null);
-        if (result.status === "pending") timer = setTimeout(check, 3000);
+        if (["pending", "submitted"].includes(result.status))
+          timer = setTimeout(check, 3000);
       } catch (error) {
         if (active) setPollError(error);
       } finally {
@@ -1065,7 +1066,7 @@ export function CheckoutPage() {
     project.status !== "published" ||
     (offer && !["active", "open"].includes(offer.status));
   const confirmed = purchase?.status === "confirmed";
-  const pending = purchase?.status === "pending";
+  const pending = ["pending", "submitted"].includes(purchase?.status);
   return (
     <>
       <PageTitle
@@ -1114,7 +1115,10 @@ export function CheckoutPage() {
             </div>
             <div className="app-list-prose">
               <dt>Purchase gas</dt>
-              <dd>Covered by the platform share</dd>
+              <dd>
+                Settlement gas is covered. Funding your purchase balance needs
+                wallet gas.
+              </dd>
             </div>
           </dl>
           <TaskError error={task.error || pollError} />

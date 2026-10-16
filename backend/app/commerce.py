@@ -101,6 +101,14 @@ def intent_view(intent):
     }
 
 
+def intent_with_funding(intent, chain, address):
+    result = intent_view(intent)
+    if intent.status == "pending":
+        price = json.loads(intent.typed_data)["message"]["price"]
+        result["funding"] = chain.funding(address, price)
+    return result
+
+
 def owned_intent(db, intent_id, user):
     intent = db.scalar(
         select(PurchaseIntent)
@@ -130,7 +138,9 @@ def create_intent(body: IntentInput, request: Request, db: DB, user: Actor, key:
         )
     )
     if existing:
-        return {"data": intent_view(repeated(existing, payload))}
+        return {
+            "data": intent_with_funding(repeated(existing, payload), gateway(request), user.address)
+        }
     chain = gateway(request)
     now = request.app.state.clock()
     deadline = now + getattr(request.app.state.settings, "purchase_intent_ttl_seconds", 300)
@@ -197,7 +207,7 @@ def create_intent(body: IntentInput, request: Request, db: DB, user: Actor, key:
             ),
             payload,
         )
-    return {"data": {**intent_view(intent), "funding": chain.funding(user.address, price)}}
+    return {"data": intent_with_funding(intent, chain, user.address)}
 
 
 @router.post("/purchase-intents/{intent_id}/confirm")
@@ -224,9 +234,10 @@ def confirm_intent(
 @router.get("/purchase-intents/{intent_id}")
 def get_intent(intent_id: str, request: Request, db: DB, user: Buyer):
     intent = owned_intent(db, intent_id, user)
-    refresh_intent(intent, gateway(request))
+    chain = gateway(request)
+    refresh_intent(intent, chain)
     db.commit()
-    return {"data": intent_view(intent)}
+    return {"data": intent_with_funding(intent, chain, user.address)}
 
 
 def enrich_entitlement(db, right):

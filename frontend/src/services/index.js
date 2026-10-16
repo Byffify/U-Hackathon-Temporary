@@ -609,9 +609,9 @@ export const API_ROUTES = {
   "library.list": ["GET", "/me/entitlements"],
   "library.get": ["GET", "/entitlements/:id"],
   "library.download": ["GET", "/entitlements/:id/releases/:releaseId/download"],
-  "purchases.create": ["POST", "/purchases"],
-  "purchases.get": ["GET", "/purchases/:id"],
-  "purchases.confirm": ["POST", "/purchases/:id/confirm"],
+  "purchases.create": ["POST", "/purchase-intents"],
+  "purchases.get": ["GET", "/purchase-intents/:id"],
+  "purchases.confirm": ["POST", "/purchase-intents/:id/confirm"],
   "resales.create": ["POST", "/resales"],
   "resales.get": ["GET", "/resales/:id"],
   "gemini.sources": ["GET", "/gemini/sources"],
@@ -678,6 +678,31 @@ function apiService(baseUrl, fetchImpl) {
     priceUnits: right.price_wei,
     status: "active",
   });
+  const purchaseFromApi = (intent) => {
+    const authorization = intent.authorization;
+    const offerId =
+      authorization?.primaryType === "ResalePurchase"
+        ? authorization.message?.tokenId
+        : null;
+    return {
+      ...intent,
+      projectId: intent.project_id,
+      offerId,
+      authorization,
+      funding: intent.funding,
+      status: intent.status === "reverted" ? "failed" : intent.status,
+      walletRequest:
+        intent.status === "pending" && authorization
+          ? {
+              method: "eth_signTypedData_v4",
+              params: [
+                authorization.message?.buyer,
+                JSON.stringify(authorization),
+              ],
+            }
+          : null,
+    };
+  };
   const errorFrom = (data, status, operation) => {
     if (
       status === 401 &&
@@ -749,6 +774,17 @@ function apiService(baseUrl, fetchImpl) {
         method = "PATCH";
         path = "/projects/:id";
       }
+      if (operation === "purchases.create") {
+        if (p.offerId) p.resale_offer_id = p.offerId;
+        else p.project_id = p.projectId;
+        delete p.projectId;
+        delete p.offerId;
+      }
+      if (operation === "purchases.confirm") {
+        p.signature = p.signature ?? p.result;
+        p.idempotencyKey ||= p.id;
+        delete p.result;
+      }
       const aliases = {
         id: p.projectId ?? p.entitlementId ?? p.purchaseId ?? p.offerId,
         sessionId: p.chatId ?? p.id,
@@ -769,8 +805,8 @@ function apiService(baseUrl, fetchImpl) {
         !["auth.challenge", "auth.verify"].includes(operation)
       )
         headers["X-CSRF-Token"] = csrfToken;
-      if (payload.idempotencyKey)
-        headers["Idempotency-Key"] = payload.idempotencyKey;
+      const idempotencyKey = p.idempotencyKey;
+      if (idempotencyKey) headers["Idempotency-Key"] = idempotencyKey;
       delete p.idempotencyKey;
       let url = `${root}${path}`,
         body;
@@ -798,8 +834,8 @@ function apiService(baseUrl, fetchImpl) {
             xhr.withCredentials = true;
             xhr.setRequestHeader("Accept", "application/json");
             if (csrfToken) xhr.setRequestHeader("X-CSRF-Token", csrfToken);
-            if (payload.idempotencyKey)
-              xhr.setRequestHeader("Idempotency-Key", payload.idempotencyKey);
+            if (idempotencyKey)
+              xhr.setRequestHeader("Idempotency-Key", idempotencyKey);
             xhr.upload.onprogress = (e) => {
               if (e.lengthComputable)
                 payload.onProgress?.(Math.round((e.loaded / e.total) * 100));
@@ -907,6 +943,7 @@ function apiService(baseUrl, fetchImpl) {
       }
       const result = data?.data ?? data;
       if (operation === "images.upload") return imageUploadResult(result);
+      if (operation.startsWith("purchases.")) return purchaseFromApi(result);
       if (operation === "projects.get" || operation === "explore.get")
         return projectFromApi(result);
       if (operation === "library.list") {

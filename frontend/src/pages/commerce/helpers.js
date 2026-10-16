@@ -82,6 +82,66 @@ export function assertPurchaseBinding(
   return purchase;
 }
 
+async function fundPurchase({ purchase, provider, storage }) {
+  const authorization = purchase.authorization;
+  const price = BigInt(authorization.message.price);
+  const balance = BigInt(purchase.funding?.balance_wei ?? 0);
+  if (balance >= price) return;
+  const transaction = purchase.funding?.deposit_transaction;
+  if (
+    Number(transaction?.chain_id) !== CHAIN_ID ||
+    transaction.to?.toLowerCase() !==
+      authorization.domain?.verifyingContract?.toLowerCase() ||
+    !/^0x[0-9a-fA-F]*$/.test(transaction.data || "")
+  )
+    throw new Error("The backend returned an invalid deposit transaction.");
+  const key = `utopia:deposit:${purchase.id}`;
+  let deposit;
+  try {
+    deposit = JSON.parse(storage.getItem(key) || "null");
+  } catch {
+    throw new Error("The saved deposit transaction could not be read.");
+  }
+  if (deposit?.confirmed) return;
+  if (!deposit) {
+    storage.setItem("utopia:payment:probe", "ready");
+    storage.removeItem("utopia:payment:probe");
+    const hash = await provider.request({
+      method: "eth_sendTransaction",
+      params: [
+        {
+          from: authorization.message.buyer,
+          to: transaction.to,
+          data: transaction.data,
+          value: `0x${(price - balance).toString(16)}`,
+        },
+      ],
+    });
+    if (!/^0x[0-9a-fA-F]{64}$/.test(hash || ""))
+      throw new Error(
+        "The wallet returned an invalid deposit transaction hash.",
+      );
+    deposit = { hash };
+    storage.setItem(key, JSON.stringify(deposit));
+  }
+  let receipt;
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    receipt = await provider.request({
+      method: "eth_getTransactionReceipt",
+      params: [deposit.hash],
+    });
+    if (receipt) break;
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+  }
+  if (!receipt)
+    throw new Error(
+      "Your deposit is still pending. Continue this purchase shortly.",
+    );
+  if (BigInt(receipt.status ?? 0) !== 1n)
+    throw new Error("The deposit transaction failed. Check your wallet.");
+  storage.setItem(key, JSON.stringify({ ...deposit, confirmed: true }));
+}
+
 export async function finishWalletPurchase({
   purchase,
   provider,
@@ -101,7 +161,25 @@ export async function finishWalletPurchase({
     const chainId = await provider.request({ method: "eth_chainId" });
     if (Number(chainId) !== CHAIN_ID)
       throw new Error("Switch your wallet to Avalanche L1 to continue.");
+    if (purchase.authorization) {
+      const buyer = purchase.authorization.message?.buyer;
+      const accounts = await provider.request({
+        method: "eth_requestAccounts",
+      });
+      if (
+        Number(purchase.authorization.domain?.chainId) !== CHAIN_ID ||
+        !buyer ||
+        !Array.isArray(accounts) ||
+        accounts[0]?.toLowerCase() !== buyer.toLowerCase()
+      )
+        throw new Error(
+          "Connect the buyer wallet on Avalanche L1 to continue.",
+        );
+      await fundPurchase({ purchase, provider, storage });
+    }
     const result = await provider.request(purchase.walletRequest);
+    if (purchase.authorization && !/^0x[0-9a-fA-F]{130}$/.test(result || ""))
+      throw new Error("The wallet returned an invalid purchase signature.");
     receipt = { result };
     storage.setItem(`utopia:payment:${purchase.id}`, JSON.stringify(receipt));
   }
@@ -112,5 +190,7 @@ export async function finishWalletPurchase({
   });
   if (result.status === "confirmed")
     storage.removeItem(`utopia:payment:${purchase.id}`);
+  if (result.status === "confirmed")
+    storage.removeItem(`utopia:deposit:${purchase.id}`);
   return result;
 }

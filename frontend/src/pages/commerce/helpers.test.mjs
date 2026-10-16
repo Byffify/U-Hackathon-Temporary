@@ -109,6 +109,86 @@ test("payment confirmation retries reuse persisted wallet response without anoth
   assert.equal(paymentReceipt(storage, "payment"), null);
 });
 
+test("purchase intent deposits missing funds, signs typed data, and retries confirmation safely", async () => {
+  const records = new Map();
+  const storage = {
+    getItem: (key) => records.get(key) ?? null,
+    setItem: (key, value) => records.set(key, value),
+    removeItem: (key) => records.delete(key),
+  };
+  const buyer = `0x${"34".repeat(20)}`;
+  const contract = `0x${"12".repeat(20)}`;
+  const signature = `0x${"ab".repeat(65)}`;
+  const hash = `0x${"cd".repeat(32)}`;
+  const methods = [];
+  const provider = {
+    request: async ({ method, params }) => {
+      methods.push(method);
+      if (method === "eth_chainId") return "0xa0c08";
+      if (method === "eth_requestAccounts") return [buyer];
+      if (method === "eth_sendTransaction") {
+        assert.equal(params[0].value, "0x3c");
+        return hash;
+      }
+      if (method === "eth_getTransactionReceipt") return { status: "0x1" };
+      if (method === "eth_signTypedData_v4") return signature;
+      throw new Error(`Unexpected wallet method ${method}`);
+    },
+  };
+  let attempts = 0;
+  const service = {
+    call: async (operation, payload) => {
+      assert.equal(operation, "purchases.confirm");
+      assert.equal(payload.result, signature);
+      if (++attempts === 1) throw new Error("Network interrupted");
+      return { id: "intent-1", status: "confirmed" };
+    },
+  };
+  const purchase = {
+    id: "intent-1",
+    authorization: {
+      domain: { chainId: 658440, verifyingContract: contract },
+      message: { buyer, price: "100" },
+    },
+    funding: {
+      balance_wei: "40",
+      deposit_transaction: {
+        chain_id: 658440,
+        to: contract,
+        data: "0xd0e30db0",
+      },
+    },
+    walletRequest: {
+      method: "eth_signTypedData_v4",
+      params: [buyer, "{}"],
+    },
+  };
+  await assert.rejects(
+    finishWalletPurchase({ purchase, provider, service, storage }),
+    /Network interrupted/,
+  );
+  assert.equal(
+    methods.filter((method) => method === "eth_sendTransaction").length,
+    1,
+  );
+  const result = await finishWalletPurchase({
+    purchase,
+    provider,
+    service,
+    storage,
+  });
+  assert.equal(result.status, "confirmed");
+  assert.equal(
+    methods.filter((method) => method === "eth_sendTransaction").length,
+    1,
+  );
+  assert.equal(
+    methods.filter((method) => method === "eth_signTypedData_v4").length,
+    1,
+  );
+  assert.equal(paymentReceipt(storage, "intent-1"), null);
+});
+
 test("checkout only accepts purchase status for its exact project, offer, and purchase reference", () => {
   const confirmed = {
     id: "purchase-b",

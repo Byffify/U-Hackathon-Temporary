@@ -11,7 +11,6 @@ from eth_account.messages import encode_typed_data
 
 from app.errors import ApiError
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -135,7 +134,12 @@ class ChainGateway:
             return getattr(contract.functions, name)(*args).call()
         except ApiError:
             raise
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "Marketplace contract read failed function=%s exception=%s",
+                name,
+                type(exc).__name__,
+            )
             raise unavailable() from None
 
     def listing(self, listing_id):
