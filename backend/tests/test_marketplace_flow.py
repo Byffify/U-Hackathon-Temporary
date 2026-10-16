@@ -24,7 +24,24 @@ class RightsChain:
 def test_publish_search_free_update_and_current_holder_access(client, app, tmp_path):
     app.state.settings.storage_root = str(tmp_path / "files")
     identity = login(client)
+    assert (
+        client.patch(
+            "/api/v1/me/profile",
+            json={"name": "Jane"},
+            headers={"X-CSRF-Token": identity["csrf_token"]},
+        ).status_code
+        == 200
+    )
     project = create_project(client, identity)
+    image_bytes = io.BytesIO()
+    Image.new("RGB", (8, 8), "red").save(image_bytes, format="PNG")
+    image_response = client.post(
+        f"/api/v1/projects/{project['id']}/images",
+        files={"file": ("cover.png", image_bytes.getvalue(), "image/png")},
+        headers={"X-CSRF-Token": identity["csrf_token"]},
+    )
+    assert image_response.status_code == 201, image_response.text
+    image_url = image_response.json()["data"]["url"]
     first = upload(client, identity, project).json()["data"]
     chain = RightsChain(
         {
@@ -42,7 +59,10 @@ def test_publish_search_free_update_and_current_holder_access(client, app, tmp_p
         headers={"X-CSRF-Token": identity["csrf_token"]},
     )
     assert response.status_code == 200, response.text
-    assert client.get("/api/v1/projects?q=Python&stack=Python").json()["meta"]["total"] == 1
+    listing = client.get("/api/v1/projects?q=Python&stack=Python").json()
+    assert listing["meta"]["total"] == 1
+    assert listing["data"][0]["creator_name"] == "Jane"
+    assert listing["data"][0]["images"] == [image_url]
     assert client.get("/api/v1/projects?q=missing").json()["data"] == []
     new_raw = zip_bytes({"app.py": "print('updated')"})
     second = client.post(

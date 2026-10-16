@@ -20,7 +20,7 @@ export function ExplorePage() {
     stack = search.get("stack") || "",
     page = Math.max(1, Number(search.get("page")) || 1);
   const result = useResource(
-    () => service.call("projects.list", { q, stack, page }),
+    () => service.call("explore.list", { q, stack, page }),
     [q, stack, page],
   );
   function update(key, value) {
@@ -135,7 +135,7 @@ export function ProjectDetailPage() {
     [user?.id],
   );
   const result = useResource(
-    () => service.call("projects.get", { id: projectId }),
+    () => service.call("explore.get", { id: projectId }),
     [projectId],
   );
   if (result.loading) return <p role="status">Loading project…</p>;
@@ -149,8 +149,19 @@ export function ProjectDetailPage() {
         Back to Explore
       </Link>
       <PageTitle title={p.title}>
-        <Link to={`/creators/${p.creatorId}`}>By {p.creator}</Link> · {p.stack}
+        {p.isExample ? (
+          <>By {p.creator}</>
+        ) : (
+          <Link to={`/creators/${p.creatorId}`}>By {p.creator}</Link>
+        )}{" "}
+        · {p.stack}
       </PageTitle>
+      {p.isExample && (
+        <Notice>
+          This is an example project. It has no source archive or on-chain
+          listing yet.
+        </Notice>
+      )}
       <div className="app-detail-grid">
         <div className="app-stack">
           <div className={`app-detail-art ${p.tone || "aqua"}`}>
@@ -173,8 +184,12 @@ export function ProjectDetailPage() {
           <section>
             <h2>About this project</h2>
             <p className="app-prose">{p.description}</p>
+            {p.isExample && <>
+              <p className="app-muted">{p.type}</p>
+              <ul>{p.features?.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+            </>}
           </section>
-          <section>
+          {!p.isExample && <section>
             <h2>Releases</h2>
             {p.releases?.map((r) => (
               <div key={r.id} className="app-release">
@@ -182,15 +197,27 @@ export function ProjectDetailPage() {
                 <p>{r.notes || "Source project release."}</p>
               </div>
             ))}
-          </section>
+          </section>}
         </div>
         <aside className="app-card app-purchase-panel">
           <span className="app-badge">{p.stack}</span>
-          <p className="app-large-price">
-            {formatAvax(BigInt(p.priceUnits))}
-            <small>test AVAX</small>
-          </p>
-          <p>Source ZIP · Updates included</p>
+          {p.isExample ? (
+            <>
+              <p className="app-large-price">
+                {formatAvax(BigInt(p.priceUnits))}
+                <small>test AVAX · example price</small>
+              </p>
+              <p>Preview only. Purchase is unavailable.</p>
+            </>
+          ) : (
+            <>
+              <p className="app-large-price">
+                {formatAvax(BigInt(p.priceUnits))}
+                <small>test AVAX</small>
+              </p>
+              <p>Source ZIP · Updates included</p>
+            </>
+          )}
           <hr />
           <h2>Your license</h2>
           <p className="app-prose">{p.license}</p>
@@ -204,18 +231,20 @@ export function ProjectDetailPage() {
               <strong>{p.derivativeAllowed ? "Allowed" : "Not allowed"}</strong>
             </li>
           </ul>
-          <Link
-            className="app-button"
-            to={
-              owned.data?.find((e) => e.projectId === p.id)
-                ? `/library/${owned.data.find((e) => e.projectId === p.id).id}`
-                : `/checkout/${p.id}`
-            }
-          >
-            {owned.data?.some((e) => e.projectId === p.id)
-              ? "Open in your library"
-              : "Review purchase"}
-          </Link>
+          {!p.isExample && (
+            <Link
+              className="app-button"
+              to={
+                owned.data?.find((e) => e.projectId === p.id)
+                  ? `/library/${owned.data.find((e) => e.projectId === p.id).id}`
+                  : `/checkout/${p.id}`
+              }
+            >
+              {owned.data?.some((e) => e.projectId === p.id)
+                ? "Open in your library"
+                : "Review purchase"}
+            </Link>
+          )}
           {demo ? (
             <a
               className="app-button secondary"
@@ -228,10 +257,12 @@ export function ProjectDetailPage() {
           ) : (
             <Notice>No live demo has been supplied.</Notice>
           )}
-          <p className="app-muted">
-            Fuji testnet. Platform covers purchase gas. You install and deploy
-            the source yourself.
-          </p>
+          {!p.isExample && (
+            <p className="app-muted">
+              Fuji testnet. Platform covers purchase gas. You install and deploy
+              the source yourself.
+            </p>
+          )}
         </aside>
       </div>
     </>

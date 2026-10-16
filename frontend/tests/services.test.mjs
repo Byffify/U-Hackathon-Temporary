@@ -135,7 +135,10 @@ test("API uses authenticated requests, structured errors, and never falls back t
         return {
           ok: true,
           status: 200,
-          json: async () => ({ data: { items: [], total: 0 } }),
+          json: async () => ({
+            data: [],
+            meta: { page: 1, page_size: 20, total: 0 },
+          }),
         };
       },
     });
@@ -257,6 +260,100 @@ test("API auth and profiles follow the delivered backend contract", async () => 
   });
   assert.equal(calls[5].url, "/api/v1/creators/creator-1");
   assert.equal(calls[6].options.headers["X-CSRF-Token"], "csrf-1");
+});
+
+test("API Explore maps published project data, media and pagination", async () => {
+  const calls = [];
+  const project = {
+    id: "project-1",
+    creator_id: "creator-1",
+    creator_name: "Jane",
+    title: "A storefront",
+    description: "Products and cart",
+    stack: "React",
+    demo_url: "https://example.test/demo",
+    price_wei: "500000000000000000",
+    license_terms: "Use and modify",
+    resale_allowed: true,
+    derivative_allowed: false,
+    published: true,
+    images: ["/api/v1/media/image-1"],
+  };
+  const s = createService({
+    mode: "api",
+    baseUrl: "https://api.example.test/api/v1",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      return {
+        ok: true,
+        status: 200,
+        json: async () => ({
+          data: url.includes("/projects/") ? { ...project } : [project],
+          meta: { page: 2, page_size: 20, total: 21 },
+        }),
+      };
+    },
+  });
+  const list = await s.call("projects.list", {
+    q: "cart",
+    stack: "React",
+    page: 2,
+    creatorId: "creator-1",
+  });
+  assert.equal(
+    calls[0].url,
+    "https://api.example.test/api/v1/projects?q=cart&stack=React&page=2&creator_id=creator-1",
+  );
+  assert.equal(calls[0].options.credentials, "include");
+  assert.deepEqual(
+    { total: list.total, page: list.page, pageSize: list.pageSize },
+    { total: 21, page: 2, pageSize: 20 },
+  );
+  assert.equal(list.items[0].creator, "Jane");
+  assert.equal(list.items[0].priceUnits, project.price_wei);
+  assert.equal(
+    list.items[0].screenshots[0],
+    "https://api.example.test/api/v1/media/image-1",
+  );
+  const detail = await s.call("projects.get", { id: "project-1" });
+  assert.equal(detail.creatorId, "creator-1");
+  assert.equal(detail.license, "Use and modify");
+});
+
+test("API Explore fetches backend examples and keeps them separate from purchasable listings", async () => {
+  const calls = [];
+  const example = {
+    id: "flora",
+    creator_id: null,
+    creator_name: "Maya Chen",
+    title: "Flora storefront",
+    description: "A storefront",
+    stack: "React",
+    price_wei: "500000000000000000",
+    license_terms: "Preview only",
+    published: false,
+    is_example: true,
+    images: [],
+  };
+  const service = createService({
+    mode: "api",
+    fetchImpl: async (url) => {
+      calls.push(url);
+      return {
+        ok: true,
+        status: 200,
+        json: async () => url.endsWith("/flora")
+          ? { data: example }
+          : { data: [example], meta: { page: 1, page_size: 20, total: 1 } },
+      };
+    },
+  });
+  const list = await service.call("explore.list", { q: "flora" });
+  assert.equal(calls[0], "/api/v1/explore?q=flora");
+  assert.equal(list.items[0].isExample, true);
+  assert.equal(list.items[0].status, "example");
+  assert.equal((await service.call("explore.get", { id: "flora" })).title, "Flora storefront");
+  assert.equal(calls[1], "/api/v1/explore/flora");
 });
 
 test("an unauthenticated initial API session is a signed-out state", async () => {

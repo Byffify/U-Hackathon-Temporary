@@ -182,6 +182,8 @@ function demoService(storage) {
       }
       const db = read();
       let result;
+      if (operation === "explore.list") operation = "projects.list";
+      if (operation === "explore.get") operation = "projects.get";
       switch (operation) {
         case "auth.session":
           return db.users[db.session] ?? null;
@@ -583,6 +585,8 @@ export const API_ROUTES = {
   "profiles.update": ["PATCH", "/me/profile"],
   "projects.list": ["GET", "/projects"],
   "projects.get": ["GET", "/projects/:id"],
+  "explore.list": ["GET", "/explore"],
+  "explore.get": ["GET", "/explore/:id"],
   "projects.save": ["POST", "/projects"],
   "projects.upload": ["POST", "/projects/:projectId/uploads"],
   "images.upload": ["POST", "/projects/:projectId/images"],
@@ -612,6 +616,41 @@ function apiService(baseUrl, fetchImpl) {
   const root = String(baseUrl).replace(/\/$/, "");
   let csrfToken = null;
   if (!(root.startsWith("/") && !root.startsWith("//"))) safeUrl(root);
+  const projectFromApi = (project) => {
+    if (
+      !project ||
+      typeof project !== "object" ||
+      !/^\d+$/.test(project.price_wei)
+    )
+      fail("INVALID_RESPONSE", "The API returned an invalid project.");
+    const base = root.startsWith("/") ? globalThis.location?.origin : root;
+    const images = Array.isArray(project.images) ? project.images : [];
+    const screenshots = images.flatMap((value) => {
+      try {
+        const url = new URL(value, base);
+        return ["http:", "https:"].includes(url.protocol) ? [url.href] : [];
+      } catch {
+        return [];
+      }
+    });
+    return {
+      ...project,
+      creatorId: project.creator_id,
+      creator: project.creator_name || "Creator",
+      isExample: project.is_example === true,
+      demoUrl: project.demo_url,
+      priceUnits: project.price_wei,
+      license: project.license_terms,
+      resaleAllowed: project.resale_allowed,
+      derivativeAllowed: project.derivative_allowed,
+      status: project.is_example
+        ? "example"
+        : project.published
+          ? "published"
+          : "draft",
+      screenshots,
+    };
+  };
   const errorFrom = (data, status, operation) => {
     if (
       status === 401 &&
@@ -648,6 +687,10 @@ function apiService(baseUrl, fetchImpl) {
       if (operation === "profiles.update" && "avatarUrl" in p) {
         p.avatar_url = p.avatarUrl || null;
         delete p.avatarUrl;
+      }
+      if (operation === "projects.list" && p.creatorId) {
+        p.creator_id = p.creatorId;
+        delete p.creatorId;
       }
       if (operation === "projects.save" && p.id) {
         method = "PATCH";
@@ -772,7 +815,19 @@ function apiService(baseUrl, fetchImpl) {
         }
         throw errorFrom(data, response.status, operation);
       }
+      if (operation === "projects.list" || operation === "explore.list") {
+        if (!Array.isArray(data?.data) || !data?.meta)
+          fail("INVALID_RESPONSE", "The API returned an invalid project list.");
+        return {
+          items: data.data.map(projectFromApi),
+          total: data.meta.total,
+          page: data.meta.page,
+          pageSize: data.meta.page_size,
+        };
+      }
       const result = data?.data ?? data;
+      if (operation === "projects.get" || operation === "explore.get")
+        return projectFromApi(result);
       if (operation === "auth.session" || operation === "auth.verify") {
         csrfToken = result.csrf_token;
         return result.user;

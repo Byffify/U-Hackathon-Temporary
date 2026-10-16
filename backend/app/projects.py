@@ -227,8 +227,24 @@ def list_projects(
         .limit(page_size)
     ).all()
     total = db.scalar(select(func.count()).select_from(Project).where(*conditions))
+    project_ids = [row.id for row in rows]
+    creator_ids = {row.creator_id for row in rows}
+    creator_names = {
+        user.id: user.name or "Creator"
+        for user in db.scalars(select(User).where(User.id.in_(creator_ids))).all()
+    }
+    images_by_project = {identifier: [] for identifier in project_ids}
+    for image in db.scalars(select(Media).where(Media.project_id.in_(project_ids))).all():
+        images_by_project[image.project_id].append(f"/api/v1/media/{image.id}")
     return {
-        "data": [project_view(row) for row in rows],
+        "data": [
+            {
+                **project_view(row),
+                "creator_name": creator_names.get(row.creator_id, "Creator"),
+                "images": images_by_project[row.id],
+            }
+            for row in rows
+        ],
         "meta": {"page": page, "page_size": page_size, "total": total},
     }
 
@@ -253,6 +269,7 @@ def get_project(identifier: str, request: Request, db: DB):
     return {
         "data": {
             **project_view(project),
+            "creator_name": (db.get(User, project.creator_id).name or "Creator"),
             "images": [
                 f"/api/v1/media/{m.id}"
                 for m in db.scalars(select(Media).where(Media.project_id == project.id)).all()

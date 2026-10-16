@@ -139,20 +139,30 @@ export function ProjectCard({ project }) {
       <div className="app-project-copy">
         <div className="app-actions">
           <span className="app-badge">{project.stack}</span>
-          <span className="app-price">
-            {formatAvax(BigInt(project.priceUnits || "0"))} test AVAX
-          </span>
+          {project.isExample ? (
+            <span className="app-price">
+              Example · {formatAvax(BigInt(project.priceUnits || "0"))} test AVAX
+            </span>
+          ) : (
+            <span className="app-price">
+              {formatAvax(BigInt(project.priceUnits || "0"))} test AVAX
+            </span>
+          )}
         </div>
         <h2>
           <Link to={`/projects/${project.id}`}>{project.title}</Link>
         </h2>
         <p className="app-muted">{project.description}</p>
-        <Link
-          className="app-creator-link"
-          to={`/creators/${project.creatorId}`}
-        >
-          {project.creator}
-        </Link>
+        {project.isExample ? (
+          <span className="app-creator-link">{project.creator}</span>
+        ) : (
+          <Link
+            className="app-creator-link"
+            to={`/creators/${project.creatorId}`}
+          >
+            {project.creator}
+          </Link>
+        )}
       </div>
     </article>
   );

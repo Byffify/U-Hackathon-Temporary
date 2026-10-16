@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.orm import sessionmaker
 
-from app import auth, commerce, gemini, intake, profiles, projects
+from app import auth, commerce, explore, gemini, intake, profiles, projects
 from app.body_limit import BodyLimitMiddleware
 from app.chain import ChainGateway
 from app.config import Settings
@@ -62,6 +62,7 @@ def create_app(settings: Settings | None = None, *, clock=None) -> FastAPI:
     app.include_router(auth.router)
     app.include_router(profiles.router)
     app.include_router(projects.router)
+    app.include_router(explore.router)
     app.include_router(commerce.router)
     app.include_router(gemini.router)
     app.include_router(intake.router)

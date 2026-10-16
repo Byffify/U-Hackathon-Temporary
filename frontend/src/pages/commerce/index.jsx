@@ -19,6 +19,7 @@ import {
   FormValidationError,
 } from "../../app/ui.jsx";
 import { splitSale, formatAvax } from "../../utils/pricing.js";
+import { signInWithWallet } from "../../lib/wallet.js";
 import {
   archiveError,
   priceText,
@@ -99,35 +100,8 @@ export function ConnectPage() {
     const result = await task.run(async () => {
       if (mode === "demo") await service.call("auth.demoLogin", { account });
       else {
-        const provider = window.ethereum;
-        if (!provider?.request)
-          throw new Error(
-            "Install an Ethereum-compatible wallet, then return to connect.",
-          );
         try {
-          const accounts = await provider.request({
-            method: "eth_requestAccounts",
-          });
-          const address = accounts?.[0];
-          if (!address) throw new Error("No wallet account was selected.");
-          const chainId = await provider.request({ method: "eth_chainId" });
-          if (String(chainId).toLowerCase() !== "0xa869")
-            throw new Error(
-              "Switch your wallet to Avalanche Fuji, then connect again.",
-            );
-          const challenge = await service.call("auth.challenge", {
-            address,
-            chainId,
-          });
-          const signature = await provider.request({
-            method: "personal_sign",
-            params: [challenge.message, address],
-          });
-          await service.call("auth.verify", {
-            address,
-            signature,
-            challengeId: challenge.id || challenge.challengeId,
-          });
+          await signInWithWallet(service, window.ethereum);
         } catch (error) {
           throw walletError(error);
         }
@@ -139,7 +113,7 @@ export function ConnectPage() {
         );
       return true;
     });
-    if (result && !sessionExpired) navigate(target, { replace: true });
+    if (result) navigate(target, { replace: true });
   }
   return (
     <>

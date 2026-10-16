@@ -52,6 +52,8 @@ All successful responses wrap the payload in `{ "data": ... }`. Every request re
 | GET `/api/v1/me/profile` | Current profile, authentication required |
 | PATCH `/api/v1/me/profile` | Optional `name`, `bio`, `avatar_url`; update only submitted fields; requires session/Origin/CSRF |
 | GET `/api/v1/creators/{id}` | Public `{id,name,bio,avatar_url}`, no wallet/session information |
+| GET `/api/v1/explore` | Public paginated catalog with three backend-owned examples and published listings; supports `q`, `stack`, `page`, `page_size` |
+| GET `/api/v1/explore/{id}` | Public example or published project detail; examples carry `is_example:true` and have no purchase/source archive |
 
 Profile limits: name 1–80 characters, bio at most 2000, HTTP(S) avatar URL at most 2048 characters. `avatar_url:null` clears the image. Name/bio cannot be null; unknown fields and empty PATCH are rejected. POST `/api/v1/me/avatar` accepts an actual multipart image and updates avatar_url.
 
